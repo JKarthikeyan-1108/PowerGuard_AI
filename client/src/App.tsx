@@ -15,7 +15,10 @@ import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ConsumerDashboard from './pages/consumer/ConsumerDashboard';
+import RecommendationsPage from './pages/consumer/RecommendationsPage';
 import UtilityDashboard from './pages/utility/UtilityDashboard';
+import TheftDetectionPage from './pages/utility/TheftDetectionPage';
+import SimulatorPage from './pages/utility/SimulatorPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
 /** Protected route - requires auth + role */
@@ -85,7 +88,7 @@ function AppRoutes() {
         <Route path="predictions" element={<PlaceholderPage title="AI Predictions" />} />
         <Route path="alerts" element={<PlaceholderPage title="Alerts & Notifications" />} />
         <Route path="reports" element={<PlaceholderPage title="Reports & Downloads" />} />
-        <Route path="recommendations" element={<PlaceholderPage title="Energy Saving Recommendations" />} />
+        <Route path="recommendations" element={<RecommendationsPage />} />
         <Route path="settings" element={<PlaceholderPage title="Settings & Profile" />} />
       </Route>
 
@@ -101,13 +104,13 @@ function AppRoutes() {
         <Route index element={<UtilityDashboard />} />
         <Route path="consumers" element={<PlaceholderPage title="Consumer Management" />} />
         <Route path="meters" element={<PlaceholderPage title="Smart Meter Management" />} />
-        <Route path="theft-detection" element={<PlaceholderPage title="AI Theft Detection" />} />
+        <Route path="theft-detection" element={<TheftDetectionPage />} />
         <Route path="alerts" element={<PlaceholderPage title="Alert Center" />} />
         <Route path="inspections" element={<PlaceholderPage title="Inspection Queue" />} />
         <Route path="transformers" element={<PlaceholderPage title="Transformer Analytics" />} />
         <Route path="forecast" element={<PlaceholderPage title="Energy Demand Forecast" />} />
         <Route path="reports" element={<PlaceholderPage title="Reports & Exports" />} />
-        <Route path="simulator" element={<PlaceholderPage title="Smart Meter Simulator" />} />
+        <Route path="simulator" element={<SimulatorPage />} />
       </Route>
 
       {/* Admin Routes */}
