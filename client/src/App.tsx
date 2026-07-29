@@ -22,6 +22,8 @@ import SimulatorPage from './pages/utility/SimulatorPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SystemHealthPage from './pages/admin/SystemHealthPage';
 import MlModelsPage from './pages/admin/MlModelsPage';
+import AlertsPage from './pages/shared/AlertsPage';
+import ReportsPage from './pages/shared/ReportsPage';
 
 /** Protected route - requires auth + role */
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: UserRole[] }) {
@@ -86,10 +88,10 @@ function AppRoutes() {
       >
         <Route index element={<ConsumerDashboard />} />
         <Route path="live-meter" element={<PlaceholderPage title="Live Meter Monitor" />} />
-        <Route path="analytics" element={<PlaceholderPage title="Energy Analytics" />} />
+        <Route path="analytics" element={<PlaceholderPage title="Usage Analytics" />} />
         <Route path="predictions" element={<PlaceholderPage title="AI Predictions" />} />
-        <Route path="alerts" element={<PlaceholderPage title="Alerts & Notifications" />} />
-        <Route path="reports" element={<PlaceholderPage title="Reports & Downloads" />} />
+        <Route path="alerts" element={<AlertsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="recommendations" element={<RecommendationsPage />} />
         <Route path="settings" element={<PlaceholderPage title="Settings & Profile" />} />
       </Route>
@@ -107,11 +109,11 @@ function AppRoutes() {
         <Route path="consumers" element={<PlaceholderPage title="Consumer Management" />} />
         <Route path="meters" element={<PlaceholderPage title="Smart Meter Management" />} />
         <Route path="theft-detection" element={<TheftDetectionPage />} />
-        <Route path="alerts" element={<PlaceholderPage title="Alert Center" />} />
+        <Route path="alerts" element={<AlertsPage />} />
         <Route path="inspections" element={<PlaceholderPage title="Inspection Queue" />} />
         <Route path="transformers" element={<PlaceholderPage title="Transformer Analytics" />} />
         <Route path="forecast" element={<PlaceholderPage title="Energy Demand Forecast" />} />
-        <Route path="reports" element={<PlaceholderPage title="Reports & Exports" />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="simulator" element={<SimulatorPage />} />
       </Route>
 
@@ -128,10 +130,10 @@ function AppRoutes() {
         <Route path="users" element={<PlaceholderPage title="User Management" />} />
         <Route path="meters" element={<PlaceholderPage title="System Meters" />} />
         <Route path="ml-models" element={<MlModelsPage />} />
-        <Route path="alerts" element={<PlaceholderPage title="System Alerts" />} />
+        <Route path="alerts" element={<AlertsPage />} />
         <Route path="system-health" element={<SystemHealthPage />} />
         <Route path="logs" element={<PlaceholderPage title="System Logs" />} />
-        <Route path="reports" element={<PlaceholderPage title="Admin Reports" />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<PlaceholderPage title="System Settings" />} />
       </Route>
 
