@@ -1,0 +1,98 @@
+# ============================================================
+# PowerGuard - Docker Compose
+# Full stack: Frontend, Backend, ML Engine, MySQL
+# ============================================================
+
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: powerguard-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: powerguard_root_2026
+      MYSQL_DATABASE: powerguard
+      MYSQL_USER: powerguard
+      MYSQL_PASSWORD: powerguard_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./server/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - powerguard-net
+
+  # Express Backend
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: powerguard-api
+    restart: always
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: powerguard
+      DB_USER: powerguard
+      DB_PASSWORD: powerguard_pass
+      JWT_SECRET: powerguard_jwt_secret_change_me
+      ML_ENGINE_URL: http://ml-engine:8000
+      CLIENT_URL: http://localhost:5173
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - powerguard-net
+
+  # Python ML Engine
+  ml-engine:
+    build:
+      context: ./ml-engine
+      dockerfile: Dockerfile
+    container_name: powerguard-ml
+    restart: always
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: powerguard
+      DB_USER: powerguard
+      DB_PASSWORD: powerguard_pass
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - powerguard-net
+
+  # React Frontend
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: powerguard-web
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+    networks:
+      - powerguard-net
+
+volumes:
+  mysql_data:
+
+networks:
+  powerguard-net:
+    driver: bridge

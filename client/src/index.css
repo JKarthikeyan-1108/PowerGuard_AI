@@ -1,0 +1,319 @@
+@import "tailwindcss";
+
+/* ============================================================
+   PowerGuard - Global Styles & Design System
+   Professional SaaS theme - Blue + Green gradient
+   ============================================================ */
+
+@theme {
+  /* Primary - Professional Blue */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* Accent - Electric Green */
+  --color-accent-50: #ecfdf5;
+  --color-accent-100: #d1fae5;
+  --color-accent-200: #a7f3d0;
+  --color-accent-300: #6ee7b7;
+  --color-accent-400: #34d399;
+  --color-accent-500: #10b981;
+  --color-accent-600: #059669;
+  --color-accent-700: #047857;
+  --color-accent-800: #065f46;
+  --color-accent-900: #064e3b;
+  --color-accent-950: #022c22;
+
+  /* Surface colors for cards/modals */
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #0f172a;
+  --color-surface-card-light: #f8fafc;
+  --color-surface-card-dark: #1e293b;
+
+  /* Animation */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-slide-up: slide-up 0.5s ease-out;
+  --animate-slide-in-right: slide-in-right 0.3s ease-out;
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-shimmer: shimmer 2s infinite;
+  --animate-counter: counter 1.5s ease-out;
+}
+
+/* Keyframe Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes counter {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light mode */
+body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Dark mode */
+.dark body {
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+/* ============================================================
+   Glassmorphism Card
+   ============================================================ */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================
+   Gradient Backgrounds
+   ============================================================ */
+.gradient-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+}
+
+.gradient-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #0c4a6e 60%, #064e3b 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+}
+
+.dark .gradient-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+}
+
+/* ============================================================
+   Sidebar Styles
+   ============================================================ */
+.sidebar {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+.sidebar-item {
+  transition: all 0.2s ease;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.sidebar-item:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+.sidebar-item.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%);
+  color: #60a5fa;
+  border-left: 3px solid #3b82f6;
+}
+
+/* ============================================================
+   Custom Scrollbar
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+}
+
+/* ============================================================
+   Stat Card Hover Effects
+   ============================================================ */
+.stat-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(59, 130, 246, 0.2);
+}
+
+.dark .stat-card:hover {
+  box-shadow: 0 10px 40px -10px rgba(59, 130, 246, 0.3);
+}
+
+/* ============================================================
+   Live Indicator
+   ============================================================ */
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+/* ============================================================
+   Chart Container
+   ============================================================ */
+.chart-container {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* ============================================================
+   Button Styles
+   ============================================================ */
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-accent:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* ============================================================
+   Grid Pattern (for backgrounds)
+   ============================================================ */
+.grid-pattern {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.dark .grid-pattern {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px);
+}
+
+/* ============================================================
+   Risk Level Badge Styles
+   ============================================================ */
+.risk-low { @apply bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20; }
+.risk-medium { @apply bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20; }
+.risk-high { @apply bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20; }
+.risk-critical { @apply bg-red-600/15 text-red-700 dark:text-red-300 border border-red-600/30; }
+
+/* ============================================================
+   Status Indicator
+   ============================================================ */
+.status-active { @apply bg-emerald-500; }
+.status-inactive { @apply bg-gray-400; }
+.status-maintenance { @apply bg-amber-500; }
+.status-tampered { @apply bg-red-500; }
+
+/* ============================================================
+   Table Styles
+   ============================================================ */
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.dark .data-table tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================================
+   Loading Skeleton
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, 
+    rgba(148, 163, 184, 0.1) 25%, 
+    rgba(148, 163, 184, 0.2) 50%, 
+    rgba(148, 163, 184, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
