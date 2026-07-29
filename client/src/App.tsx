@@ -20,6 +20,8 @@ import UtilityDashboard from './pages/utility/UtilityDashboard';
 import TheftDetectionPage from './pages/utility/TheftDetectionPage';
 import SimulatorPage from './pages/utility/SimulatorPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import SystemHealthPage from './pages/admin/SystemHealthPage';
+import MlModelsPage from './pages/admin/MlModelsPage';
 
 /** Protected route - requires auth + role */
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: UserRole[] }) {
@@ -124,12 +126,12 @@ function AppRoutes() {
       >
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<PlaceholderPage title="User Management" />} />
-        <Route path="meters" element={<PlaceholderPage title="Smart Meter Management" />} />
-        <Route path="ml-models" element={<PlaceholderPage title="ML Model Management" />} />
-        <Route path="alerts" element={<PlaceholderPage title="Alert Management" />} />
-        <Route path="system-health" element={<PlaceholderPage title="System Health Monitor" />} />
+        <Route path="meters" element={<PlaceholderPage title="System Meters" />} />
+        <Route path="ml-models" element={<MlModelsPage />} />
+        <Route path="alerts" element={<PlaceholderPage title="System Alerts" />} />
+        <Route path="system-health" element={<SystemHealthPage />} />
         <Route path="logs" element={<PlaceholderPage title="System Logs" />} />
-        <Route path="reports" element={<PlaceholderPage title="Reports" />} />
+        <Route path="reports" element={<PlaceholderPage title="Admin Reports" />} />
         <Route path="settings" element={<PlaceholderPage title="System Settings" />} />
       </Route>
 
