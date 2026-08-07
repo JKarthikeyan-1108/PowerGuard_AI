@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # ── MySQL Database ──────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: powerguard-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-powerguard}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-powerguard}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - powerguard-net
+
+  # ── MQTT Broker (Mosquitto) ─────────────────
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: powerguard-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+    networks:
+      - powerguard-net
+
+  # ── Backend Server (Node.js + Express) ──────
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
+    container_name: powerguard-server
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-powerguard}@mysql:3306/${MYSQL_DATABASE:-powerguard}
+      NODE_ENV: production
+      SERVER_PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-in-production}
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      AI_SERVICE_URL: http://ai:8000
+    ports:
+      - "4000:4000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+    networks:
+      - powerguard-net
+
+  # ── AI Service (FastAPI) ────────────────────
+  ai:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    container_name: powerguard-ai
+    restart: unless-stopped
+    environment:
+      AI_SERVICE_PORT: 8000
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-powerguard}@mysql:3306/${MYSQL_DATABASE:-powerguard}
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - powerguard-net
+
+  # ── Frontend (Nginx) ───────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    container_name: powerguard-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    networks:
+      - powerguard-net
+
+  # ── Nginx Reverse Proxy ────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: powerguard-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+      - server
+      - ai
+    networks:
+      - powerguard-net
+
+volumes:
+  mysql_data:
+  mqtt_data:
+  mqtt_logs:
+
+networks:
+  powerguard-net:
+    driver: bridge

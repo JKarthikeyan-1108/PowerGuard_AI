@@ -1,0 +1,1039 @@
+// ─────────────────────────────────────────────────────────
+// PowerGuard — Prisma Schema
+// Enterprise-Grade Relational Schema
+// ─────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum MeterType {
+  RESIDENTIAL
+  COMMERCIAL
+  INDUSTRIAL
+}
+
+enum MeterStatus {
+  ACTIVE
+  INACTIVE
+  FAULTY
+  TAMPERED
+  MAINTENANCE
+}
+
+enum AlertType {
+  THEFT_DETECTED
+  ANOMALY_DETECTED
+  HIGH_CONSUMPTION
+  METER_TAMPER
+  TRANSFORMER_OVERLOAD
+  OUTAGE
+  SYSTEM_ERROR
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  NEW
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+  FALSE_ALARM
+}
+
+enum IncidentStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum IncidentPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DeliveryMethod {
+  EMAIL
+  PUSH
+  IN_APP
+  WEBHOOK
+}
+
+enum ReadingSource {
+  SMART_METER
+  MANUAL
+  ESTIMATED
+  IOT_SENSOR
+}
+
+enum ReportType {
+  CONSUMPTION
+  BILLING
+  THEFT_ANALYSIS
+  DEMAND_FORECAST
+  SYSTEM_HEALTH
+  AUDIT
+}
+
+enum ReportFormat {
+  PDF
+  CSV
+  EXCEL
+  JSON
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum ForecastPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+// ── RBAC Models ──────────────────────────────────────────
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  permissions Permission[] @relation("RolePermissions")
+  users       User[]       @relation("UserRoles")
+
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  action      String
+  resource    String
+  description String?
+  roles       Role[]  @relation("RolePermissions")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([action, resource])
+  @@map("permissions")
+}
+
+// ── SaaS Models ──────────────────────────────────────────
+
+model SubscriptionPlan {
+  id             String         @id @default(uuid())
+  name           String         @unique
+  priceMonthly   Float
+  maxMeters      Int
+  maxUsers       Int
+  features       Json
+  organizations  Organization[]
+  
+  @@map("subscription_plans")
+}
+
+model Organization {
+  id                 String    @id @default(uuid())
+  name               String    @unique
+  slug               String    @unique
+  type               String
+  subscriptionPlanId String
+  status             String    @default("ACTIVE")
+  createdAt          DateTime  @default(now())
+  
+  plan               SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  
+  users              User[]
+  meters             Meter[]
+  areas              Area[]
+  transformers       Transformer[]
+  settings           OrgSetting[]
+  consumers          ConsumerProfile[]
+  apiKeys            ApiKey[]
+  webhooks           WebhookEndpoint[]
+  
+  @@map("organizations")
+}
+
+model ApiKey {
+  id             String    @id @default(uuid())
+  key            String    @unique // Hashed key
+  name           String
+  prefix         String    // e.g. pg_live_...
+  scopes         Json      // Array of permissions ['scada:write', 'billing:read']
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  organizationId String
+  userId         String?   // Optional: which user created it
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  createdAt      DateTime  @default(now())
+  
+  @@map("api_keys")
+}
+
+model WebhookEndpoint {
+  id             String    @id @default(uuid())
+  url            String
+  secret         String    // To sign the payload
+  events         Json      // Array of event types
+  isActive       Boolean   @default(true)
+  failureCount   Int       @default(0)
+  organizationId String
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  @@map("webhook_endpoints")
+}
+
+model OrgSetting {
+  id             String @id @default(uuid())
+  organizationId String
+  key            String
+  value          String @db.Text
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@map("org_settings")
+}
+
+// ── Core Models ──────────────────────────────────────────
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  status        UserStatus @default(ACTIVE)
+  emailVerified Boolean    @default(false)
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+  failedLoginAttempts Int       @default(0)
+  lockoutUntil        DateTime?
+  organizationId      String?
+
+  // Auditing & Soft Delete
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  // Relations
+  roles             Role[]            @relation("UserRoles")
+  consumerProfile   ConsumerProfile?
+  utilityOfficer    UtilityOfficer?
+  adminProfile      AdminProfile?
+  notifications     Notification[]
+  alerts            Alert[]           @relation("AlertUser")
+  auditLogs         AuditLog[]
+  reports           Report[]
+  settings          Setting[]
+  refreshTokens     RefreshToken[]
+  incidentsAssigned Incident[]        @relation("IncidentAssignee")
+  incidentsCreated  Incident[]        @relation("IncidentCreator")
+  incidentComments  IncidentComment[]
+  userPreferences   UserPreference?
+  passwordResets    PasswordResetToken[]
+  maintenanceTasks  MaintenanceSchedule[]
+  organization      Organization?     @relation(fields: [organizationId], references: [id])
+  apiKeysCreated    ApiKey[]
+
+  @@index([status])
+  @@index([email])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(500)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(500)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  used      Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+model AdminProfile {
+  id          String  @id @default(uuid())
+  userId      String  @unique
+  department  String?
+  accessLevel String  @default("STANDARD")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
+  @@map("admin_profiles")
+}
+
+model ConsumerProfile {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  accountNumber  String    @unique
+  address        String
+  city           String
+  state          String
+  zipCode        String
+  areaId         String?
+  tariffPlanId   String?
+  tariffRate     Float     @default(5.0) // Fallback rate
+  connectionType MeterType @default(RESIDENTIAL)
+  connectedSince DateTime  @default(now())
+  organizationId String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  // Relations
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area                      Area?                      @relation(fields: [areaId], references: [id], onDelete: Restrict)
+  tariffPlan                TariffPlan?                @relation(fields: [tariffPlanId], references: [id], onDelete: Restrict)
+  meters                    Meter[]
+  billPredictions           BillPrediction[]
+  bills                     Bill[]
+  recommendations           Recommendation[]
+  consumerClusterAssignment ConsumerClusterAssignment?
+  organization              Organization?              @relation(fields: [organizationId], references: [id])
+
+  @@index([areaId])
+  @@index([accountNumber])
+  @@index([areaId, connectionType])
+  @@index([deletedAt])
+  @@map("consumer_profiles")
+}
+
+model UtilityOfficer {
+  id           String  @id @default(uuid())
+  userId       String  @unique
+  employeeId   String  @unique
+  department   String
+  designation  String
+  jurisdiction String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
+  @@map("utility_officers")
+}
+
+model Meter {
+  id              String      @id @default(uuid())
+  serialNumber    String      @unique
+  type            MeterType   @default(RESIDENTIAL)
+  status          MeterStatus @default(ACTIVE)
+  consumerId      String?
+  transformerId   String?
+  latitude        Float?
+  longitude       Float?
+  installDate     DateTime    @default(now())
+  lastReadingAt   DateTime?
+  organizationId  String?
+  firmwareVersion String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  // Relations
+  consumer         ConsumerProfile?  @relation(fields: [consumerId], references: [id], onDelete: Restrict)
+  transformer      Transformer?      @relation(fields: [transformerId], references: [id], onDelete: Restrict)
+  readings         MeterReading[]
+  alerts           Alert[]
+  theftPredictions TheftPrediction[]
+  heartbeats       HeartbeatLog[]
+  connectionLogs   ConnectionLog[]
+  deviceConfig     DeviceConfig?
+  assetHealth      AssetHealth?
+  maintenanceSchedules MaintenanceSchedule[]
+  organization     Organization?     @relation(fields: [organizationId], references: [id])
+
+  @@index([consumerId])
+  @@index([transformerId])
+  @@index([serialNumber])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("meters")
+}
+
+model HeartbeatLog {
+  id              String   @id @default(uuid())
+  meterId         String
+  status          String
+  firmwareVersion String?
+  uptime          Int?
+  timestamp       DateTime @default(now())
+
+  meter Meter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@index([meterId])
+  @@index([timestamp(sort: Desc)])
+  @@map("heartbeat_logs")
+}
+
+model ConnectionLog {
+  id        String   @id @default(uuid())
+  meterId   String
+  event     String   // "CONNECT", "DISCONNECT"
+  reason    String?
+  timestamp DateTime @default(now())
+
+  meter Meter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@index([meterId])
+  @@index([timestamp(sort: Desc)])
+  @@index([event])
+  @@map("connection_logs")
+}
+
+model DeviceConfig {
+  id               String   @id @default(uuid())
+  meterId          String   @unique
+  pollingRateMs    Int      @default(5000)
+  heartbeatRateMs  Int      @default(30000)
+  autoReconnect    Boolean  @default(true)
+  metadata         Json?
+  lastSyncAt       DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  meter Meter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@map("device_configs")
+}
+
+model MeterReading {
+  id          String        @id @default(uuid())
+  meterId     String
+  value       Float
+  voltage     Float?
+  current     Float?
+  powerFactor Float?
+  frequency   Float?
+  timestamp   DateTime      @default(now())
+  source      ReadingSource @default(SMART_METER)
+  isAnomaly   Boolean       @default(false)
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime? // Archival logic
+
+  // Relations
+  meter Meter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@index([meterId])
+  @@index([timestamp])
+  @@index([meterId, timestamp(sort: Desc)])
+  @@index([isAnomaly])
+  @@map("meter_readings")
+}
+
+model Alert {
+  id          String        @id @default(uuid())
+  type        AlertType
+  severity    AlertSeverity @default(MEDIUM)
+  status      AlertStatus   @default(NEW)
+  title       String
+  description String        @db.Text
+  meterId     String?
+  userId      String?
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  metadata    Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  meter    Meter?         @relation(fields: [meterId], references: [id], onDelete: Cascade)
+  user     User?          @relation("AlertUser", fields: [userId], references: [id], onDelete: Cascade)
+  history  AlertHistory[]
+  incident Incident?
+
+  @@index([type])
+  @@index([severity])
+  @@index([status])
+  @@index([status, severity])
+  @@index([meterId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("alerts")
+}
+
+model AlertHistory {
+  id        String   @id @default(uuid())
+  alertId   String
+  status    String
+  notes     String?  @db.Text
+  changedBy String?
+  timestamp DateTime @default(now())
+
+  // Relations
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+  @@index([timestamp])
+  @@map("alert_history")
+}
+
+model Notification {
+  id        String  @id @default(uuid())
+  userId    String
+  title     String
+  body      String  @db.Text
+  type      String  @default("info")
+  read      Boolean @default(false)
+  actionUrl String?
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Recommendation {
+  id               String  @id @default(uuid())
+  consumerId       String
+  type             String
+  title            String
+  content          String  @db.Text
+  estimatedSavings Float?
+  priority         Int     @default(0)
+  applied          Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  consumer ConsumerProfile @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([consumerId])
+  @@map("recommendations")
+}
+
+model BillPrediction {
+  id              String   @id @default(uuid())
+  consumerId      String
+  month           DateTime
+  predictedAmount Float
+  actualAmount    Float?
+  predictedUsage  Float
+  actualUsage     Float?
+  modelVersion    String
+  confidence      Float?
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  // Relations
+  consumer ConsumerProfile @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([consumerId])
+  @@index([month])
+  @@map("bill_predictions")
+}
+
+model TheftPrediction {
+  id           String    @id @default(uuid())
+  meterId      String
+  probability  Float
+  riskLevel    RiskLevel
+  modelVersion String
+  features     Json?
+  flags        Json?
+  verified     Boolean?
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  // Relations
+  meter Meter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@index([meterId])
+  @@index([probability])
+  @@index([riskLevel])
+  @@index([createdAt])
+  @@map("theft_predictions")
+}
+
+model EnergyForecast {
+  id              String         @id @default(uuid())
+  areaId          String?
+  forecastDate    DateTime
+  period          ForecastPeriod @default(DAILY)
+  predictedDemand Float
+  actualDemand    Float?
+  peakDemand      Float?
+  modelVersion    String
+  confidence      Float?
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  // Relations
+  area Area? @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  @@index([areaId])
+  @@index([forecastDate])
+  @@map("energy_forecasts")
+}
+
+model ConsumerCluster {
+  id               String  @id @default(uuid())
+  label            String
+  description      String? @db.Text
+  centroidFeatures Json?
+  memberCount      Int     @default(0)
+  avgConsumption   Float?
+  riskScore        Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assignments ConsumerClusterAssignment[]
+
+  @@map("consumer_clusters")
+}
+
+model ConsumerClusterAssignment {
+  id         String   @id @default(uuid())
+  consumerId String   @unique
+  clusterId  String
+  distance   Float?
+  assignedAt DateTime @default(now())
+
+  // Relations
+  consumer ConsumerProfile @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+  cluster  ConsumerCluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+
+  @@index([clusterId])
+  @@map("consumer_cluster_assignments")
+}
+
+model Transformer {
+  id           String   @id @default(uuid())
+  name         String
+  serialNumber String   @unique
+  capacity     Float
+  currentLoad  Float    @default(0)
+  loadPercent  Float    @default(0)
+  latitude     Float
+  longitude    Float
+  areaId       String?
+  status       String   @default("ACTIVE")
+  installDate  DateTime @default(now())
+  organizationId String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  // Relations
+  area   Area?   @relation(fields: [areaId], references: [id], onDelete: Restrict)
+  meters Meter[]
+  assetHealth AssetHealth?
+  maintenanceSchedules MaintenanceSchedule[]
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([areaId])
+  @@index([status])
+  @@map("transformers")
+}
+
+model Area {
+  id              String    @id @default(uuid())
+  name            String    @unique
+  code            String    @unique
+  description     String?
+  riskLevel       RiskLevel @default(LOW)
+  boundaryGeoJson Json?
+  population      Int?
+  totalMeters     Int       @default(0)
+  organizationId  String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
+  updatedBy String?
+  deletedBy String?
+
+  // Relations
+  consumers    ConsumerProfile[]
+  transformers Transformer[]
+  forecasts    EnergyForecast[]
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@map("areas")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  timestamp  DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  level     String
+  message   String   @db.Text
+  service   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  @@index([level])
+  @@index([service])
+  @@index([timestamp])
+  @@map("system_logs")
+}
+
+model Setting {
+  id        String  @id @default(uuid())
+  key       String
+  value     String  @db.Text
+  scope     String  @default("global")
+  userId    String?
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([key, scope, userId])
+  @@index([scope])
+  @@map("settings")
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  title       String
+  type        ReportType
+  format      ReportFormat @default(PDF)
+  generatedBy String
+  fileUrl     String?
+  fileSize    Int?
+  parameters  Json?
+  status      String       @default("COMPLETED")
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  // Relations
+  user User @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([generatedBy])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+// ── Incident Management ──────────────────────────────────
+
+model Incident {
+  id          String           @id @default(uuid())
+  title       String
+  description String           @db.Text
+  status      IncidentStatus   @default(OPEN)
+  priority    IncidentPriority @default(MEDIUM)
+  alertId     String?          @unique
+  assigneeId  String?
+  creatorId   String
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  alert    Alert?            @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  assignee User?             @relation("IncidentAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  creator  User              @relation("IncidentCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  comments IncidentComment[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([assigneeId])
+  @@map("incidents")
+}
+
+model IncidentComment {
+  id         String @id @default(uuid())
+  incidentId String
+  userId     String
+  content    String @db.Text
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([incidentId])
+  @@map("incident_comments")
+}
+
+// ── Notifications & Preferences ─────────────────────────
+
+model NotificationTemplate {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  subject  String?
+  body     String  @db.Text
+  type     String
+  channels String // comma separated e.g. "EMAIL,IN_APP"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_templates")
+}
+
+// ── Predictive Maintenance ───────────────────────────────
+
+model AssetHealth {
+  id                  String   @id @default(uuid())
+  transformerId       String?  @unique
+  meterId             String?  @unique
+  healthScore         Float    // 0 to 100
+  failureProbability  Float    // 0.0 to 1.0
+  remainingUsefulLife Int      // Estimated days left
+  primaryRiskFactor   String   // e.g. "Voltage Instability", "Aging"
+  lastAssessedAt      DateTime @default(now())
+
+  transformer Transformer? @relation(fields: [transformerId], references: [id], onDelete: Cascade)
+  meter       Meter?       @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@map("asset_health")
+}
+
+model MaintenanceSchedule {
+  id              String   @id @default(uuid())
+  transformerId   String?
+  meterId         String?
+  scheduledDate   DateTime
+  taskDescription String   @db.Text
+  technicianId    String?
+  status          String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  completionNotes String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  transformer Transformer? @relation(fields: [transformerId], references: [id], onDelete: Cascade)
+  meter       Meter?       @relation(fields: [meterId], references: [id], onDelete: Cascade)
+  technician  User?        @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+
+  @@map("maintenance_schedules")
+}
+
+// ── Dynamic Billing ───────────────────────────────────────
+
+model TariffPlan {
+  id              String      @id @default(uuid())
+  name            String      @unique
+  type            MeterType   // RESIDENTIAL, COMMERCIAL, INDUSTRIAL
+  baseRate        Float       // Flat rate per kWh
+  peakRate        Float       // Rate during peak hours
+  offPeakRate     Float       // Rate during off-peak hours
+  peakStartHour   Int         // e.g., 18 (6 PM)
+  peakEndHour     Int         // e.g., 22 (10 PM)
+  seasonalMultiplier Float    // Multiplier during peak seasons
+  peakMonths      String      // Comma-separated months, e.g., "6,7,8"
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  consumers       ConsumerProfile[]
+  
+  @@map("tariff_plans")
+}
+
+model Bill {
+  id              String   @id @default(uuid())
+  consumerId      String
+  billingPeriod   DateTime // e.g., "2026-08-01"
+  totalUsageKwh   Float
+  peakUsageKwh    Float
+  offPeakUsageKwh Float
+  baseCost        Float
+  peakCost        Float
+  offPeakCost     Float
+  totalAmount     Float
+  dueDate         DateTime
+  status          String   @default("PENDING") // PENDING, PAID, OVERDUE
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  consumer        ConsumerProfile @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([consumerId])
+  @@index([billingPeriod])
+  @@map("bills")
+}
+
+model NotificationQueue {
+  id         String  @id @default(uuid())
+  userId     String
+  templateId String?
+  type       String
+  title      String
+  body       String  @db.Text
+  channels   String
+  metadata   Json?
+  status     String  @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  attempts   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@map("notification_queue")
+}
+
+model DeliveryLog {
+  id             String         @id @default(uuid())
+  notificationId String?
+  userId         String
+  method         DeliveryMethod
+  status         String // SUCCESS, FAILED
+  error          String?        @db.Text
+  timestamp      DateTime       @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@map("delivery_logs")
+}
+
+model UserPreference {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  emailEnabled    Boolean @default(true)
+  pushEnabled     Boolean @default(true)
+  inAppEnabled    Boolean @default(true)
+  quietHoursStart String? // e.g. "22:00"
+  quietHoursEnd   String? // e.g. "07:00"
+  subscribedTypes String  @default("ALL") // ALL or comma separated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}

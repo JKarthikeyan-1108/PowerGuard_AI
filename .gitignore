@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Database
+*.db
+*.sqlite
+
+# AI Models (large binary files)
+apps/ai/trained_models/*.pkl
+apps/ai/trained_models/*.h5
+apps/ai/trained_models/*.joblib
+
+# Docker
+docker-data/
+
+# Coverage
+coverage/
+.nyc_output/
+htmlcov/
+
+# Prisma
+apps/server/prisma/migrations/*/migration_lock.toml

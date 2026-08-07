@@ -1,0 +1,245 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════
+   PowerGuard Premium Design System
+   Inspired by Stripe, Linear, Vercel, Datadog
+   ═══════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 243 75% 59%;
+    --radius: 0.625rem;
+
+    /* Sidebar — Light */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222.2 47.4% 11.2%;
+    --sidebar-primary: 243 75% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 243 75% 59%;
+
+    /* Charts */
+    --chart-1: 243 75% 59%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 6%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 6%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 243 75% 59%;
+
+    /* Sidebar — Dark */
+    --sidebar-background: 224 71.4% 3%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 243 75% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 27.9% 12%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 215 27.9% 14%;
+    --sidebar-ring: 243 75% 59%;
+
+    /* Charts — Dark */
+    --chart-1: 243 75% 65%;
+    --chart-2: 160 60% 50%;
+    --chart-3: 30 80% 60%;
+    --chart-4: 280 65% 65%;
+    --chart-5: 340 75% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Glassmorphism Utilities
+   ═══════════════════════════════════════════════════════ */
+@layer components {
+  .glass {
+    @apply bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/10;
+  }
+
+  .glass-card {
+    @apply bg-white/80 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-lg shadow-black/[0.03] dark:shadow-black/[0.1];
+  }
+
+  .glass-sidebar {
+    @apply bg-white/90 dark:bg-gray-950/90 backdrop-blur-2xl border-r border-gray-200/60 dark:border-gray-800/60;
+  }
+
+  /* Premium Card Styles */
+  .card-elevated {
+    @apply bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300;
+  }
+
+  .card-interactive {
+    @apply card-elevated hover:border-primary/30 hover:shadow-primary/5 cursor-pointer transition-all duration-300;
+  }
+
+  .card-stat {
+    @apply bg-card rounded-xl border border-border/50 p-6 relative overflow-hidden;
+  }
+
+  .card-stat::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300;
+  }
+
+  .card-stat:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Gradient Text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-electric-500 to-energy-500;
+  }
+
+  .text-gradient-premium {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-electric-400 via-purple-500 to-energy-400;
+  }
+
+  /* Status indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+
+  .status-dot-active {
+    @apply status-dot bg-energy-500 shadow-sm shadow-energy-500/50;
+  }
+
+  .status-dot-warning {
+    @apply status-dot bg-amber-500 shadow-sm shadow-amber-500/50;
+  }
+
+  .status-dot-danger {
+    @apply status-dot bg-red-500 shadow-sm shadow-red-500/50;
+  }
+
+  .status-dot-inactive {
+    @apply status-dot bg-gray-400;
+  }
+
+  /* Premium input styles */
+  .input-premium {
+    @apply flex h-10 w-full rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-sm transition-all duration-200
+    placeholder:text-muted-foreground/60
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50
+    disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Sidebar styles */
+  .sidebar-item {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200
+    hover:text-foreground hover:bg-accent;
+  }
+
+  .sidebar-item-active {
+    @apply sidebar-item text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary;
+  }
+
+  /* Animated gradients */
+  .animated-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+
+  /* Leaflet map fixes */
+  .leaflet-container {
+    @apply rounded-xl z-0;
+    font-family: 'Inter', sans-serif !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Animation Utilities
+   ═══════════════════════════════════════════════════════ */
+@layer utilities {
+  .animate-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.3s; }
+}

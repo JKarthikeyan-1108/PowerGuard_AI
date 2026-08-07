@@ -1,0 +1,17 @@
+{
+  "name": "PowerGuard Utility App",
+  "short_name": "PowerGuard",
+  "description": "Smart Electricity Theft Detection and Energy Analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020817",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
