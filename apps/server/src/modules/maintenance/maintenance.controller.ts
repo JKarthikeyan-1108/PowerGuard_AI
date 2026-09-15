@@ -23,8 +23,8 @@ export class MaintenanceController {
   public assignTechnician = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const { technicianId } = req.body;
-      const data = await maintenanceService.assignTechnician(id, technicianId);
+      const technicianId = req.body.technicianId as string;
+      const data = await maintenanceService.assignTechnician(id as string, technicianId);
       res.json({
         success: true,
         data,

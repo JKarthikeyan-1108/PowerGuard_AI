@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../../middleware/authenticate';
 import { copilotService } from './copilot.service';
 
 export class CopilotController {
   
-  public handleChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public handleChat = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { message, history } = req.body;
       const user = req.user;

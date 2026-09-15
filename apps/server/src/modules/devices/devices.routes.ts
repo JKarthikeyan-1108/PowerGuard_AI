@@ -7,7 +7,7 @@ const router = Router();
 const controller = new DevicesController();
 
 router.use(authenticate);
-router.use(authorize(['ADMIN', 'UTILITY_OFFICER']));
+router.use(authorize('ADMIN', 'UTILITY_OFFICER'));
 
 router.post('/:id/restart', controller.restartDevice.bind(controller));
 router.post('/:id/config', controller.syncConfig.bind(controller));

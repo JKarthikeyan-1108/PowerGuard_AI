@@ -20,7 +20,7 @@ export class BillingController {
 
   public getConsumerBills = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { consumerId } = req.params;
+      const consumerId = req.params.consumerId as string;
       const data = await billingService.getConsumerBills(consumerId);
       res.json({
         success: true,

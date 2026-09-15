@@ -1,11 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import logger from '../config/logger';
+import { AuthRequest } from './authenticate';
 
 // Extend Express Request interface to include tenantId
 declare global {
   namespace Express {
     interface Request {
       tenantId?: string;
+      apiScopes?: string[];
     }
   }
 }
@@ -14,11 +16,11 @@ declare global {
  * Middleware to enforce Logical Tenant Isolation
  * Extracts the organizationId and sets it on the request context
  */
-export const requireTenant = (req: Request, res: Response, next: NextFunction): void => {
+export const requireTenant = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
     // Priority 1: From authenticated user JWT (if already attached by auth middleware)
-    if (req.user && req.user.organizationId) {
-      req.tenantId = req.user.organizationId;
+    if (req.user && (req.user as any).organizationId) {
+      req.tenantId = (req.user as any).organizationId;
       return next();
     }
     
@@ -44,9 +46,9 @@ export const requireTenant = (req: Request, res: Response, next: NextFunction): 
  * Optional tenant middleware - attaches tenantId if present but doesn't block if missing
  * Useful for Super Admin routes that manage across tenants
  */
-export const optionalTenant = (req: Request, res: Response, next: NextFunction): void => {
-  if (req.user && req.user.organizationId) {
-    req.tenantId = req.user.organizationId;
+export const optionalTenant = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user && (req.user as any).organizationId) {
+    req.tenantId = (req.user as any).organizationId;
   } else if (req.headers['x-organization-id'] && typeof req.headers['x-organization-id'] === 'string') {
     req.tenantId = req.headers['x-organization-id'];
   }

@@ -31,7 +31,6 @@ export class IntegrationService {
               type: row.Type || 'RESIDENTIAL',
               latitude: parseFloat(row.Latitude),
               longitude: parseFloat(row.Longitude),
-              phase: parseInt(row.Phase) || 1,
               organizationId: tenantId
             }
           });
@@ -96,15 +95,20 @@ export class IntegrationService {
    * Generates a CSV export of active alerts for Power BI / Auditing
    */
   public async exportAlerts(tenantId: string): Promise<string> {
+    // Filter alerts via meters that belong to this organization
     const alerts = await prisma.alert.findMany({
-      where: { organizationId: tenantId },
+      where: {
+        meter: {
+          organizationId: tenantId
+        }
+      },
       include: { meter: true }
     });
 
     let csvContent = 'Alert ID,Meter Serial,Type,Severity,Status,Created At\n';
     
     alerts.forEach(alert => {
-      csvContent += `${alert.id},${alert.meter?.serialNumber || 'N/A'},${alert.type},${alert.severity},${alert.status},${alert.createdAt.toISOString()}\n`;
+      csvContent += `${alert.id},${(alert as any).meter?.serialNumber || 'N/A'},${alert.type},${alert.severity},${alert.status},${alert.createdAt.toISOString()}\n`;
     });
 
     return csvContent;

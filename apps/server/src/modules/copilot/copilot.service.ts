@@ -9,7 +9,7 @@ import { calendarService } from '../../services/calendar.service';
 let aiClient: GoogleGenAI | null = null;
 try {
   if (process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI();
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
 } catch (error) {
   logger.warn('Failed to initialize GoogleGenAI. AI Copilot will operate in mock mode.');

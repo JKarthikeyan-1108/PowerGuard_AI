@@ -5,7 +5,7 @@ import { devicesService } from './devices.service';
 export class DevicesController {
   async restartDevice(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      await devicesService.restartDevice(req.params.id);
+      await devicesService.restartDevice(req.params.id as string);
       res.status(200).json({ status: 'success', message: 'Restart command sent' });
     } catch (error) {
       next(error);
@@ -14,7 +14,7 @@ export class DevicesController {
 
   async syncConfig(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const config = await devicesService.syncConfig(req.params.id, req.body);
+      const config = await devicesService.syncConfig(req.params.id as string, req.body);
       res.status(200).json({ status: 'success', data: config, message: 'Configuration synced' });
     } catch (error) {
       next(error);
@@ -23,7 +23,7 @@ export class DevicesController {
 
   async updateFirmware(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      await devicesService.updateFirmware(req.params.id, req.body.firmwareUrl, req.body.version);
+      await devicesService.updateFirmware(req.params.id as string, req.body.firmwareUrl, req.body.version);
       res.status(200).json({ status: 'success', message: 'Firmware update initiated' });
     } catch (error) {
       next(error);
@@ -32,7 +32,7 @@ export class DevicesController {
 
   async getDeviceLogs(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const logs = await devicesService.getDeviceLogs(req.params.id);
+      const logs = await devicesService.getDeviceLogs(req.params.id as string);
       res.status(200).json({ status: 'success', data: logs });
     } catch (error) {
       next(error);
@@ -41,7 +41,7 @@ export class DevicesController {
 
   async getDeviceConfig(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const config = await devicesService.getDeviceConfig(req.params.id);
+      const config = await devicesService.getDeviceConfig(req.params.id as string);
       res.status(200).json({ status: 'success', data: config });
     } catch (error) {
       next(error);

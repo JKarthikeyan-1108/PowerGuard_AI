@@ -12,6 +12,7 @@ export interface AuthRequest extends Request {
     role: string;
     firstName: string;
     lastName: string;
+    organizationId?: string;
   };
 }
 
@@ -45,7 +46,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, roles: true, firstName: true, lastName: true, status: true },
+      select: { id: true, email: true, roles: true, firstName: true, lastName: true, status: true, organizationId: true },
     });
 
     if (!user || user.status !== 'ACTIVE') {
@@ -59,6 +60,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       role: user.roles[0]?.name || 'CONSUMER',
       firstName: user.firstName,
       lastName: user.lastName,
+      organizationId: user.organizationId ?? undefined,
     };
 
     next();

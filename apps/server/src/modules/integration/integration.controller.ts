@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../../middleware/authenticate';
 import { integrationService } from './integration.service';
 import logger from '../../config/logger';
 
 export class IntegrationController {
   
-  public uploadMeters = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public uploadMeters = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.file) {
         res.status(400).json({ success: false, error: 'No file uploaded' });
@@ -25,7 +26,7 @@ export class IntegrationController {
     }
   };
 
-  public exportAlertsCsv = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public exportAlertsCsv = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = req.tenantId || req.user?.organizationId;
       if (!tenantId) {
@@ -43,7 +44,7 @@ export class IntegrationController {
     }
   };
 
-  public handleScadaTelemetry = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public handleScadaTelemetry = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       // This endpoint expects API Key authentication (x-api-key)
       const scopes = req.apiScopes || [];

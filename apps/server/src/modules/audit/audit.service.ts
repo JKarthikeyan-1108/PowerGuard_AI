@@ -44,6 +44,52 @@ export class AuditService {
       }
     });
   }
+
+  async getAuditLogs(filters: { userId?: string; action?: string; resource?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 50;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.AuditLogWhereInput = {};
+    if (filters.userId) where.userId = filters.userId;
+    if (filters.action) where.action = filters.action;
+    if (filters.resource) where.resource = filters.resource;
+    if (filters.startDate || filters.endDate) {
+      where.timestamp = {};
+      if (filters.startDate) where.timestamp.gte = new Date(filters.startDate);
+      if (filters.endDate) where.timestamp.lte = new Date(filters.endDate);
+    }
+
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { timestamp: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: { email: true, firstName: true, lastName: true }
+          }
+        }
+      }),
+      prisma.auditLog.count({ where })
+    ]);
+
+    return {
+      logs,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    };
+  }
+
+  async getUniqueActions() {
+    const actions = await prisma.auditLog.findMany({
+      select: { action: true },
+      distinct: ['action']
+    });
+    return actions.map(a => a.action);
+  }
 }
 
 export const auditService = new AuditService();
