@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '../../.env' });
 
+const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+
 const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.SERVER_PORT || '4000', 10),
@@ -14,6 +16,30 @@ const config = {
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  },
+
+  cookie: {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax' as const,
+    path: '/',
+    domain: process.env.COOKIE_DOMAIN || undefined,
+    accessTokenMaxAge: 15 * 60 * 1000,        // 15 minutes in ms
+    refreshTokenMaxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  },
+
+  csrf: {
+    secret: process.env.CSRF_SECRET || 'dev-csrf-secret-change-in-production',
+  },
+
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+  },
+
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+    authToken: process.env.TWILIO_AUTH_TOKEN || '',
+    verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID || '',
   },
 
   ai: {
@@ -37,7 +63,7 @@ const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
 } as const;
 

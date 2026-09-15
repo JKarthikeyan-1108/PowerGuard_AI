@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { Receipt, TrendingDown, Clock, Zap, Calendar, Loader2, ArrowRight } from 'lucide-react';
 import api from '@/lib/api';
 

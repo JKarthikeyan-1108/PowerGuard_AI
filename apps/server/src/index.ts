@@ -7,12 +7,12 @@ import { initMQTTSubscriber } from './services/mqtt.service';
 import { schedulerService } from './services/scheduler.service';
 import meterRoutes from './modules/meters/meters.routes';
 import alertRoutes from './modules/alerts/alerts.routes';
-import aiRoutes from './modules/ai/ai.routes';
+// import aiRoutes from './modules/ai/ai.routes'; // TODO: module not yet created
 import reportRoutes from './modules/reports/reports.routes';
-import incidentRoutes from './modules/incidents/incidents.routes';
+// import incidentRoutes from './modules/incidents/incidents.routes'; // TODO: module not yet created
 import notificationRoutes from './modules/notifications/notifications.routes';
-import deviceRoutes from './modules/devices/devices.routes';
-import demoRoutes from './modules/demo/demo.routes';
+// import deviceRoutes from './modules/devices/devices.routes'; // TODO: uses wrong route format
+// import demoRoutes from './modules/demo/demo.routes'; // TODO: module not yet created
 
 const server = http.createServer(app);
 
@@ -22,12 +22,12 @@ initSocketIO(server);
 // Routes
 app.use('/api/meters', meterRoutes);
 app.use('/api/alerts', alertRoutes);
-app.use('/api/ai', aiRoutes);
+// app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api/incidents', incidentRoutes);
+// app.use('/api/incidents', incidentRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/devices', deviceRoutes);
-app.use('/api/demo', demoRoutes);
+// app.use('/api/devices', deviceRoutes);
+// app.use('/api/demo', demoRoutes);
 
 // Initialize MQTT Subscriber
 const mqttClient = initMQTTSubscriber(process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883');

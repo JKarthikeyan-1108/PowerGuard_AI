@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import { Toaster } from 'sonner';
 import { CopilotWidget } from '@/components/copilot/CopilotWidget';
+import { CookieConsent } from '@/components/shared/CookieConsent';
 import '@/styles/globals.css';
 
 const inter = Inter({
@@ -37,6 +38,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <CopilotWidget />
+          <CookieConsent />
         </Providers>
         <script
           dangerouslySetInnerHTML={{

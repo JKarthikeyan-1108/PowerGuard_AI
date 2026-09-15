@@ -5,12 +5,12 @@ const sockets: Record<string, Socket> = {};
 export const connectSocket = (namespace: string = '/'): Socket => {
   if (sockets[namespace]?.connected) return sockets[namespace];
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
   const url = `${wsUrl}${namespace === '/' ? '' : namespace}`;
 
   const socket = io(url, {
-    auth: { token },
+    // HttpOnly cookies are sent automatically with withCredentials
+    withCredentials: true,
     transports: ['websocket', 'polling'],
     reconnectionAttempts: 5,
     reconnectionDelay: 3000,

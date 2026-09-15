@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DigitalTwinCanvas } from '@/components/digital-twin/DigitalTwinCanvas';
 import api from '@/lib/api';
-import { useSocket } from '@/hooks/use-socket';
+import { useSocket } from '@/providers/SocketProvider';
 
 export default function DigitalTwinPage() {
   const [topology, setTopology] = useState<{ nodes: any[]; edges: any[] } | null>(null);
@@ -13,9 +13,8 @@ export default function DigitalTwinPage() {
   const [liveReadings, setLiveReadings] = useState<any[]>([]);
   const [liveAlerts, setLiveAlerts] = useState<any[]>([]);
 
-  // We connect to both namespaces to receive live events
-  const readingsSocket = useSocket('/readings');
-  const alertsSocket = useSocket('/alerts');
+  // Use the dashboard-level socket context
+  const { socket } = useSocket();
 
   // Fetch initial topology
   const fetchTopology = useCallback(async () => {
@@ -38,7 +37,7 @@ export default function DigitalTwinPage() {
 
   // Socket.IO Integration for Live Power Flow Animations
   useEffect(() => {
-    if (!readingsSocket) return;
+    if (!socket) return;
     
     // Batch readings to prevent React from re-rendering too fast
     let readingBatch: any[] = [];
@@ -47,7 +46,7 @@ export default function DigitalTwinPage() {
       readingBatch.push(reading);
     };
 
-    readingsSocket.on('meter:new-reading', handleNewReading);
+    socket.on('meter:new-reading', handleNewReading);
 
     const flushInterval = setInterval(() => {
       if (readingBatch.length > 0) {
@@ -57,13 +56,13 @@ export default function DigitalTwinPage() {
     }, 500); // Flush every 500ms for smooth animations
 
     return () => {
-      readingsSocket.off('meter:new-reading', handleNewReading);
+      socket.off('meter:new-reading', handleNewReading);
       clearInterval(flushInterval);
     };
-  }, [readingsSocket]);
+  }, [socket]);
 
   useEffect(() => {
-    if (!alertsSocket) return;
+    if (!socket) return;
     
     const handleNewAlert = (alert: any) => {
       setLiveAlerts(prev => [...prev, alert]);
@@ -73,12 +72,12 @@ export default function DigitalTwinPage() {
       }
     };
 
-    alertsSocket.on('alert:new', handleNewAlert);
+    socket.on('alert:new', handleNewAlert);
 
     return () => {
-      alertsSocket.off('alert:new', handleNewAlert);
+      socket.off('alert:new', handleNewAlert);
     };
-  }, [alertsSocket, fetchTopology]);
+  }, [socket, fetchTopology]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">

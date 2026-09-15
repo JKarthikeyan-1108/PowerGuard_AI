@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+import xgboost as xgb
 import joblib
 import shap
 import os
@@ -14,6 +15,7 @@ class TheftDetectionModel:
         self.version = version
         self.if_model = None
         self.rf_model = None
+        self.xgb_model = None
         self.scaler = None
         self.explainer = None
         self._load_models()
@@ -22,14 +24,17 @@ class TheftDetectionModel:
         return {
             'if': os.path.join(MODEL_DIR, f'theft_if_{self.version}.joblib'),
             'rf': os.path.join(MODEL_DIR, f'theft_rf_{self.version}.joblib'),
+            'xgb': os.path.join(MODEL_DIR, f'theft_xgb_{self.version}.json'),
             'scaler': os.path.join(MODEL_DIR, f'theft_scaler_{self.version}.joblib')
         }
 
     def _load_models(self):
         paths = self._get_model_paths()
-        if os.path.exists(paths['if']) and os.path.exists(paths['rf']) and os.path.exists(paths['scaler']):
+        if os.path.exists(paths['if']) and os.path.exists(paths['rf']) and os.path.exists(paths['xgb']) and os.path.exists(paths['scaler']):
             self.if_model = joblib.load(paths['if'])
             self.rf_model = joblib.load(paths['rf'])
+            self.xgb_model = xgb.XGBClassifier()
+            self.xgb_model.load_model(paths['xgb'])
             self.scaler = joblib.load(paths['scaler'])
             
             # Setup SHAP explainer for Random Forest
@@ -58,12 +63,17 @@ class TheftDetectionModel:
 
         # 2. Random Forest for supervised/semi-supervised theft classification
         self.rf_model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
-        # If no actual labels exist, we could train RF on IF's predictions for explainability
+        # 3. XGBoost Classifier for advanced theft detection
+        self.xgb_model = xgb.XGBClassifier(n_estimators=100, max_depth=6, random_state=42)
+        
+        # If no actual labels exist, we could train RF/XGB on IF's predictions for explainability
         if y.sum() == 0:
             y_pseudo = (self.if_model.predict(X_scaled) == -1).astype(int)
             self.rf_model.fit(X_scaled, y_pseudo)
+            self.xgb_model.fit(X_scaled, y_pseudo)
         else:
             self.rf_model.fit(X_scaled, y)
+            self.xgb_model.fit(X_scaled, y)
 
         self.explainer = shap.TreeExplainer(self.rf_model)
 
@@ -71,6 +81,7 @@ class TheftDetectionModel:
         paths = self._get_model_paths()
         joblib.dump(self.if_model, paths['if'])
         joblib.dump(self.rf_model, paths['rf'])
+        self.xgb_model.save_model(paths['xgb'])
         joblib.dump(self.scaler, paths['scaler'])
         
         print(f"Theft Detection Models version {self.version} trained and saved.")
@@ -91,8 +102,11 @@ class TheftDetectionModel:
 
         X_scaled = self.scaler.transform(X)
         
-        # Random forest probability
-        prob = self.rf_model.predict_proba(X_scaled)[0][1]
+        # Ensembled probability
+        rf_prob = self.rf_model.predict_proba(X_scaled)[0][1]
+        xgb_prob = self.xgb_model.predict_proba(X_scaled)[0][1]
+        prob = (rf_prob * 0.4) + (xgb_prob * 0.6)
+        
         is_anomaly = self.if_model.predict(X_scaled)[0] == -1
 
         # SHAP Explainability

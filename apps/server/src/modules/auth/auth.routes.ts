@@ -1,10 +1,48 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authController } from './auth.controller';
 import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
-import { loginSchema, registerSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from './auth.validator';
+import { validateCsrf, csrfTokenHandler } from '../../middleware/csrf';
+import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema, googleLoginSchema, sendPhoneOtpSchema, verifyPhoneOtpSchema, verifyEmailSchema } from './auth.validator';
 
 const router = Router();
+
+// ── Auth-specific rate limiting ──────────────────
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: { error: 'Too many authentication attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  message: { error: 'Too many login attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const otpLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 3, // Very strict for SMS
+  message: { error: 'Too many OTP requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * @swagger
+ * /api/auth/csrf-token:
+ *   get:
+ *     summary: Get CSRF token
+ *     tags: [Auth]
+ *     responses:
+ *       200: { description: CSRF token generated }
+ */
+router.get('/csrf-token', csrfTokenHandler);
 
 /**
  * @swagger
@@ -22,10 +60,16 @@ const router = Router();
  *               email: { type: string }
  *               password: { type: string }
  *     responses:
- *       200: { description: Login successful }
+ *       200: { description: Login successful — tokens set as HttpOnly cookies }
  *       401: { description: Invalid credentials }
  */
-router.post('/login', validate(loginSchema), authController.login.bind(authController));
+router.post('/login', loginLimiter, validate(loginSchema), authController.login.bind(authController));
+
+router.post('/google', loginLimiter, validate(googleLoginSchema), authController.googleLogin.bind(authController));
+
+router.post('/phone/send-otp', otpLimiter, validate(sendPhoneOtpSchema), authController.sendPhoneOtp.bind(authController));
+
+router.post('/phone/verify-otp', loginLimiter, validate(verifyPhoneOtpSchema), authController.verifyPhoneOtp.bind(authController));
 
 /**
  * @swagger
@@ -34,26 +78,29 @@ router.post('/login', validate(loginSchema), authController.login.bind(authContr
  *     summary: Register new consumer
  *     tags: [Auth]
  */
-router.post('/register', validate(registerSchema), authController.register.bind(authController));
+router.post('/register', authLimiter, validate(registerSchema), authController.register.bind(authController));
 
 /**
  * @swagger
  * /api/auth/refresh:
  *   post:
- *     summary: Refresh access token
+ *     summary: Refresh access token using refresh_token cookie
  *     tags: [Auth]
+ *     responses:
+ *       200: { description: New tokens set as HttpOnly cookies }
+ *       401: { description: Invalid or expired refresh token }
  */
-router.post('/refresh', validate(refreshTokenSchema), authController.refresh.bind(authController));
+router.post('/refresh', authLimiter, authController.refresh.bind(authController));
 
 /**
  * @swagger
  * /api/auth/logout:
  *   post:
- *     summary: Logout user
+ *     summary: Logout user — clears auth cookies and revokes refresh token
  *     tags: [Auth]
  *     security: [{ bearerAuth: [] }]
  */
-router.post('/logout', authenticate, authController.logout.bind(authController));
+router.post('/logout', authenticate, validateCsrf, authController.logout.bind(authController));
 
 /**
  * @swagger
@@ -66,13 +113,23 @@ router.post('/logout', authenticate, authController.logout.bind(authController))
 router.get('/profile', authenticate, authController.getProfile.bind(authController));
 
 /**
+ * GET /api/auth/me - Alias for /profile (convention used by some clients)
+ */
+router.get('/me', authenticate, authController.me.bind(authController));
+
+/**
+ * POST /api/auth/verify-email - Verify email using token from verification email
+ */
+router.post('/verify-email', authLimiter, validate(verifyEmailSchema), authController.verifyEmail.bind(authController));
+
+/**
  * @swagger
  * /api/auth/forgot-password:
  *   post:
  *     summary: Request password reset
  *     tags: [Auth]
  */
-router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword.bind(authController));
+router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), authController.forgotPassword.bind(authController));
 
 /**
  * @swagger
@@ -81,7 +138,7 @@ router.post('/forgot-password', validate(forgotPasswordSchema), authController.f
  *     summary: Reset password using token
  *     tags: [Auth]
  */
-router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword.bind(authController));
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), authController.resetPassword.bind(authController));
 
 /**
  * @swagger
@@ -91,6 +148,6 @@ router.post('/reset-password', validate(resetPasswordSchema), authController.res
  *     tags: [Auth]
  *     security: [{ bearerAuth: [] }]
  */
-router.post('/change-password', authenticate, validate(changePasswordSchema), authController.changePassword.bind(authController));
+router.post('/change-password', authenticate, validateCsrf, validate(changePasswordSchema), authController.changePassword.bind(authController));
 
 export default router;

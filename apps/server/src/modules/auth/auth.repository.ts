@@ -13,6 +13,28 @@ export class AuthRepository {
     });
   }
 
+  async findUserByGoogleId(googleId: string) {
+    return prisma.user.findUnique({
+      where: { googleId },
+      include: {
+        consumerProfile: true,
+        utilityOfficer: true,
+        roles: true,
+      },
+    });
+  }
+
+  async findUserByPhone(phone: string) {
+    return prisma.user.findUnique({
+      where: { phone },
+      include: {
+        consumerProfile: true,
+        utilityOfficer: true,
+        roles: true,
+      },
+    });
+  }
+
   async createUser(data: Prisma.UserCreateInput) {
     return prisma.user.create({
       data,

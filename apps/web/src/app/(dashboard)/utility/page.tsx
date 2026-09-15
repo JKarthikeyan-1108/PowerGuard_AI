@@ -52,34 +52,21 @@ export default function UtilityDashboard() {
     }
   }, [isConnected, socket, joinRoom, leaveRoom]);
 
-  const theftTrendData = React.useMemo(() => 
-    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'].map((month) => ({
-      month,
-      detected: Math.floor(Math.random() * 15 + 5),
-      resolved: Math.floor(Math.random() * 12 + 3),
-    })), []);
+  const { data: chartData, isLoading: isChartsLoading } = useQuery({
+    queryKey: ['utility-charts'],
+    queryFn: async () => {
+      const { data } = await api.get('/analytics/utility/charts');
+      return data.data;
+    },
+    refetchInterval: 60000,
+  });
 
-  const areaDemandData = React.useMemo(() =>
-    ['DTN', 'GFR', 'IPE', 'RVC', 'NGC', 'WSH', 'EVG', 'CBH'].map((area) => ({
-      area,
-      demand: Math.floor(Math.random() * 3000 + 1000),
-    })), []);
+  const theftTrendData = chartData?.theftTrendData || [];
+  const areaDemandData = chartData?.areaDemandData || [];
+  const riskDistribution = chartData?.riskDistribution || [];
+  const loadData = chartData?.loadData || [];
 
-  const riskDistribution = [
-    { name: 'Low Risk', value: 60 },
-    { name: 'Moderate', value: 22 },
-    { name: 'High Risk', value: 12 },
-    { name: 'Critical', value: 6 },
-  ];
-
-  const loadData = React.useMemo(() =>
-    Array.from({ length: 24 }, (_, i) => ({
-      hour: `${String(i).padStart(2, '0')}:00`,
-      load: Math.random() * 500 + 200,
-      capacity: 800,
-    })), []);
-
-  if (isLoading) {
+  if (isLoading || isChartsLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -122,7 +109,7 @@ export default function UtilityDashboard() {
         <ChartCard title="Risk Distribution" subtitle="Consumer risk levels">
           <PieChartComponent data={riskDistribution} height={240} />
           <div className="mt-2 space-y-1">
-            {riskDistribution.map((d, i) => (
+            {riskDistribution.map((d: any, i: number) => (
               <div key={d.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['hsl(160,60%,45%)', 'hsl(30,80%,55%)', 'hsl(0,84%,60%)', 'hsl(280,65%,60%)'][i] }} />

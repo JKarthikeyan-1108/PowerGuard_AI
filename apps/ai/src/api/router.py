@@ -7,6 +7,7 @@ from ..models.bill_prediction import BillPredictionModel
 from ..models.demand_forecast import DemandForecastModel
 from ..models.clustering import ClusteringModel
 from ..models.recommendation import RecommendationEngine
+from ..services.feature_engineering import feature_engineering
 
 api_router = APIRouter()
 
@@ -59,6 +60,10 @@ class ClusteringRequest(BaseModel):
     night_usage_ratio: float
     weekend_usage_ratio: float
 
+class RawClusteringRequest(BaseModel):
+    consumer_id: str
+    raw_readings: List[Dict[str, Any]]
+
 
 @api_router.post("/predict/theft")
 async def predict_theft(req: TheftRequest):
@@ -93,6 +98,28 @@ async def predict_cluster(req: ClusteringRequest):
             "success": True, 
             "data": {
                 **cluster_result,
+                "recommendations": recommendations
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/predict/cluster/raw")
+async def predict_cluster_raw(req: RawClusteringRequest):
+    try:
+        # Extract features
+        features = feature_engineering.derive_features(req.raw_readings)
+        
+        # Merge for model
+        features['consumer_id'] = req.consumer_id
+        
+        cluster_result = clustering_model.predict(features)
+        recommendations = recommendation_engine.generate_recommendations(cluster_result['cluster_id'])
+        return {
+            "success": True, 
+            "data": {
+                **cluster_result,
+                "features_extracted": features,
                 "recommendations": recommendations
             }
         }

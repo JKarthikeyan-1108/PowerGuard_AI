@@ -23,11 +23,22 @@ export class ReadingProcessor {
     try {
       const meter = await prisma.meter.findUnique({
         where: { serialNumber: payload.serialNumber },
-        select: { id: true, consumerId: true, type: true }
+        select: { id: true, consumerId: true, type: true, latitude: true, longitude: true }
       });
 
       if (!meter) {
         logger.warn(`[ReadingProcessor] Unknown meter: ${payload.serialNumber}`);
+        return;
+      }
+
+      // Data Validation: exclude invalid readings before storage
+      if (
+        (payload.voltage !== undefined && (payload.voltage < 0 || payload.voltage > 500)) ||
+        (payload.current !== undefined && (payload.current < 0 || payload.current > 200)) ||
+        (payload.frequency !== undefined && (payload.frequency < 30 || payload.frequency > 70)) ||
+        (payload.value < 0)
+      ) {
+        logger.warn(`[ReadingProcessor] Invalid reading dropped for meter ${payload.serialNumber}: ${JSON.stringify(payload)}`);
         return;
       }
 
@@ -101,6 +112,8 @@ export class ReadingProcessor {
         ...reading,
         serialNumber: payload.serialNumber,
         consumerId: meter.consumerId,
+        latitude: meter.latitude,
+        longitude: meter.longitude,
       };
 
       // Broadcast to /readings namespace for global charts

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import config from '../config';
 import prisma from '../config/database';
 import logger from '../config/logger';
+import { ACCESS_TOKEN_COOKIE } from './cookieAuth';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -16,15 +17,26 @@ export interface AuthRequest extends Request {
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let token: string | undefined;
+
+    // Priority 1: Read access token from HttpOnly cookie
+    if (req.cookies?.[ACCESS_TOKEN_COOKIE]) {
+      token = req.cookies[ACCESS_TOKEN_COOKIE];
+    }
+
+    // Priority 2: Fall back to Authorization header (for API clients, mobile apps, etc.)
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
+
+    if (!token) {
       res.status(401).json({ error: 'Access token required' });
       return;
     }
 
-    const token = authHeader.split(' ')[1];
-    
     const decoded = jwt.verify(token, config.jwt.secret) as {
       id: string;
       email: string;
@@ -43,7 +55,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
     req.user = {
       id: user.id,
-      email: user.email,
+      email: user.email ?? '',
       role: user.roles[0]?.name || 'CONSUMER',
       firstName: user.firstName,
       lastName: user.lastName,

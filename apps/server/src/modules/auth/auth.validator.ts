@@ -40,3 +40,21 @@ export const changePasswordSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
 });
+
+export const googleLoginSchema = z.object({
+  idToken: z.string().min(1, 'Google ID token is required'),
+});
+
+export const sendPhoneOtpSchema = z.object({
+  phone: z.string().min(1, 'Phone number is required'),
+});
+
+export const verifyPhoneOtpSchema = z.object({
+  phone: z.string().min(1, 'Phone number is required'),
+  code: z.string().min(4, 'OTP code is required'),
+});
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Verification token is required'),
+});
+

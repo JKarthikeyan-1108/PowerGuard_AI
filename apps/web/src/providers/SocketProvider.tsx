@@ -18,10 +18,6 @@ export const SocketProvider = ({ children, namespace = '/' }: { children: React.
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Check if token exists
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
-
     const socketInstance = connectSocket(namespace);
     setSocket(socketInstance);
 

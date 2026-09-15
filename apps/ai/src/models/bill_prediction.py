@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 import joblib
@@ -13,6 +14,7 @@ class BillPredictionModel:
     def __init__(self, version="v1.0"):
         self.version = version
         self.lr_model = None
+        self.rf_model = None
         self.xgb_model = None
         self.scaler = None
         self._load_models()
@@ -20,14 +22,16 @@ class BillPredictionModel:
     def _get_model_paths(self):
         return {
             'lr': os.path.join(MODEL_DIR, f'bill_lr_{self.version}.joblib'),
+            'rf': os.path.join(MODEL_DIR, f'bill_rf_{self.version}.joblib'),
             'xgb': os.path.join(MODEL_DIR, f'bill_xgb_{self.version}.joblib'),
             'scaler': os.path.join(MODEL_DIR, f'bill_scaler_{self.version}.joblib')
         }
 
     def _load_models(self):
         paths = self._get_model_paths()
-        if os.path.exists(paths['lr']) and os.path.exists(paths['xgb']) and os.path.exists(paths['scaler']):
+        if os.path.exists(paths['lr']) and os.path.exists(paths['rf']) and os.path.exists(paths['xgb']) and os.path.exists(paths['scaler']):
             self.lr_model = joblib.load(paths['lr'])
+            self.rf_model = joblib.load(paths['rf'])
             self.xgb_model = xgb.XGBRegressor()
             self.xgb_model.load_model(paths['xgb'])
             self.scaler = joblib.load(paths['scaler'])
@@ -51,6 +55,10 @@ class BillPredictionModel:
         self.lr_model = LinearRegression()
         self.lr_model.fit(X_scaled, y)
 
+        # Random Forest Regressor
+        self.rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+        self.rf_model.fit(X_scaled, y)
+
         # Advanced XGBoost Regressor
         self.xgb_model = xgb.XGBRegressor(n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42)
         self.xgb_model.fit(X_scaled, y)
@@ -58,6 +66,7 @@ class BillPredictionModel:
         # Save models
         paths = self._get_model_paths()
         joblib.dump(self.lr_model, paths['lr'])
+        joblib.dump(self.rf_model, paths['rf'])
         self.xgb_model.save_model(paths['xgb'])
         joblib.dump(self.scaler, paths['scaler'])
         
@@ -77,10 +86,11 @@ class BillPredictionModel:
         X_scaled = self.scaler.transform(X)
         
         predicted_bill_lr = float(self.lr_model.predict(X_scaled)[0])
+        predicted_bill_rf = float(self.rf_model.predict(X_scaled)[0])
         predicted_bill_xgb = float(self.xgb_model.predict(X_scaled)[0])
         
-        # Ensembling: giving more weight to XGBoost
-        final_prediction = (predicted_bill_lr * 0.2) + (predicted_bill_xgb * 0.8)
+        # Ensembling: weighting XGB and RF more
+        final_prediction = (predicted_bill_lr * 0.1) + (predicted_bill_rf * 0.3) + (predicted_bill_xgb * 0.6)
 
         # Dummy confidence based on model variance (just for illustration)
         variance = abs(predicted_bill_lr - predicted_bill_xgb)

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import config from './config';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -41,7 +42,7 @@ app.use(cors({
   origin: config.cors.origin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 }));
 
 // ── Rate Limiting ────────────────────────────────
@@ -54,10 +55,11 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// ── Body Parsing & Compression ───────────────────
+// ── Body Parsing, Cookies & Compression ──────────
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ── Metrics Collection ───────────────────────────────
 app.use(metricsMiddleware);

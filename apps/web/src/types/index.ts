@@ -2,7 +2,7 @@
 // PowerGuard TypeScript Types
 // ─────────────────────────────────────────────────────
 
-export type UserRole = 'CONSUMER' | 'UTILITY_OFFICER' | 'ADMIN';
+export type UserRole = 'CONSUMER' | 'UTILITY_OFFICER' | 'ADMIN' | 'SUPER_ADMIN';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
 export type MeterType = 'RESIDENTIAL' | 'COMMERCIAL' | 'INDUSTRIAL';
 export type MeterStatus = 'ACTIVE' | 'INACTIVE' | 'FAULTY' | 'TAMPERED' | 'MAINTENANCE';
@@ -204,8 +204,6 @@ export interface ApiResponse<T> {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
   user: User;
 }
 

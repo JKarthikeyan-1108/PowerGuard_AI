@@ -8,23 +8,29 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, Activity, CheckCircle2, AlertTriangle, ArrowRight, XCircle } from 'lucide-react';
 import { BarChartComponent } from '@/components/charts/Charts';
 
-export default function TheftDetectionPage() {
-  const anomalies = [
-    { id: 'MTR-99A12', account: 'ACC-55219', score: 0.94, method: 'Direct Bypass Suspected', date: 'Today, 02:30 AM', status: 'CRITICAL' },
-    { id: 'MTR-11B34', account: 'ACC-88123', score: 0.88, method: 'Meter Tampering (Cover)', date: 'Yesterday, 11:15 PM', status: 'HIGH' },
-    { id: 'MTR-55C99', account: 'ACC-22941', score: 0.76, method: 'Anomalous Usage Drop', date: 'Aug 2, 2026', status: 'MEDIUM' },
-    { id: 'MTR-22D88', account: 'ACC-11044', score: 0.91, method: 'Magnetic Interference', date: 'Jul 30, 2026', status: 'HIGH' },
-  ];
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 
-  const detectionStats = [
-    { label: 'Jan', count: 12 },
-    { label: 'Feb', count: 15 },
-    { label: 'Mar', count: 8 },
-    { label: 'Apr', count: 22 },
-    { label: 'May', count: 18 },
-    { label: 'Jun', count: 25 },
-    { label: 'Jul', count: 14 },
-  ];
+export default function TheftDetectionPage() {
+  const { data: anomalies = [], isLoading } = useQuery({
+    queryKey: ['theft-alerts'],
+    queryFn: async () => {
+      const { data } = await api.get('/analytics/theft-alerts');
+      return data.data;
+    },
+    refetchInterval: 30000,
+  });
+
+  const { data: chartData } = useQuery({
+    queryKey: ['utility-charts'],
+    queryFn: async () => {
+      const { data } = await api.get('/analytics/utility/charts');
+      return data.data;
+    },
+    refetchInterval: 60000,
+  });
+
+  const detectionStats = chartData?.theftTrendData || [];
 
   return (
     <div className="space-y-6">
@@ -61,8 +67,8 @@ export default function TheftDetectionPage() {
            <CardContent>
               <BarChartComponent 
                  data={detectionStats} 
-                 xKey="label" 
-                 yKey="count" 
+                 xKey="month" 
+                 yKey="detected" 
                  height={200}
                  color="hsl(var(--destructive))"
               />
@@ -89,7 +95,11 @@ export default function TheftDetectionPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {anomalies.map((anomaly, i) => (
+                {isLoading ? (
+                  <tr><td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">Loading alerts...</td></tr>
+                ) : anomalies.length === 0 ? (
+                  <tr><td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">No active theft alerts</td></tr>
+                ) : anomalies.map((anomaly: any, i: number) => (
                   <tr key={i} className="hover:bg-muted/10 transition-colors">
                     <td className="px-6 py-4 font-mono font-medium">{anomaly.id}</td>
                     <td className="px-6 py-4 text-muted-foreground">{anomaly.account}</td>

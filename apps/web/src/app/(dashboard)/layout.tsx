@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           <SocketProvider namespace={user?.role === 'ADMIN' ? '/admin' : user?.role === 'UTILITY_OFFICER' ? '/utility' : '/consumer'}>
-            <div className="container mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
               {children}
             </div>
           </SocketProvider>

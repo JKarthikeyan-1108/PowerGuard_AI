@@ -3,6 +3,19 @@
 #include <PubSubClient.h>
 #include <PZEM004Tv30.h>
 #include <ArduinoJson.h>
+#include <vector>
+
+// EMA Filter constant
+const float EMA_ALPHA = 0.2;
+
+// Filtered values
+float filteredVoltage = 0;
+float filteredCurrent = 0;
+float filteredPower = 0;
+
+// Offline Buffer
+std::vector<String> offlineBuffer;
+const size_t MAX_BUFFER_SIZE = 60; // 5 mins of 5s readings
 
 // Hardware Serial 2 for PZEM-004T
 #if !defined(PZEM_RX_PIN) && !defined(PZEM_TX_PIN)
@@ -113,32 +126,45 @@ void publishHeartbeat() {
   Serial.println("Heartbeat published.");
 }
 
-void publishReading() {
-  float voltage = pzem.voltage();
-  float current = pzem.current();
-  float power = pzem.power();
+void processAndPublishReading() {
+  float rawVoltage = pzem.voltage();
+  float rawCurrent = pzem.current();
+  float rawPower = pzem.power();
   float energy = pzem.energy();
   float frequency = pzem.frequency();
   float pf = pzem.pf();
 
-  if(isnan(voltage)) {
+  if(isnan(rawVoltage)) {
     Serial.println("Error reading voltage");
-    // Send alert
-    StaticJsonDocument<256> alertDoc;
-    alertDoc["meterId"] = METER_ID;
-    alertDoc["type"] = "SENSOR_FAILURE";
-    alertDoc["message"] = "Failed to read from PZEM-004T";
-    char alertBuf[256];
-    serializeJson(alertDoc, alertBuf);
-    mqttClient.publish(alertTopic.c_str(), alertBuf);
+    if (mqttClient.connected()) {
+      // Send alert
+      StaticJsonDocument<256> alertDoc;
+      alertDoc["meterId"] = METER_ID;
+      alertDoc["type"] = "SENSOR_FAILURE";
+      alertDoc["message"] = "Failed to read from PZEM-004T";
+      char alertBuf[256];
+      serializeJson(alertDoc, alertBuf);
+      mqttClient.publish(alertTopic.c_str(), alertBuf);
+    }
     return;
+  }
+
+  // Edge-Level Preprocessing (EMA Filter)
+  if (filteredVoltage == 0) { // First reading
+    filteredVoltage = rawVoltage;
+    filteredCurrent = rawCurrent;
+    filteredPower = rawPower;
+  } else {
+    filteredVoltage = (EMA_ALPHA * rawVoltage) + ((1 - EMA_ALPHA) * filteredVoltage);
+    filteredCurrent = (EMA_ALPHA * rawCurrent) + ((1 - EMA_ALPHA) * filteredCurrent);
+    filteredPower = (EMA_ALPHA * rawPower) + ((1 - EMA_ALPHA) * filteredPower);
   }
 
   StaticJsonDocument<512> doc;
   doc["meterId"] = METER_ID;
-  doc["voltage"] = voltage;
-  doc["current"] = current;
-  doc["power"] = power;
+  doc["voltage"] = filteredVoltage;
+  doc["current"] = filteredCurrent;
+  doc["power"] = filteredPower;
   doc["energy"] = energy;
   doc["frequency"] = frequency;
   doc["powerFactor"] = pf;
@@ -146,8 +172,20 @@ void publishReading() {
 
   char buffer[512];
   serializeJson(doc, buffer);
-  mqttClient.publish(readingTopic.c_str(), buffer);
-  Serial.println("Reading published.");
+  String payload = String(buffer);
+
+  if (mqttClient.connected()) {
+    mqttClient.publish(readingTopic.c_str(), buffer);
+    Serial.println("Reading published.");
+  } else {
+    // Fail-Safe Buffering
+    if (offlineBuffer.size() < MAX_BUFFER_SIZE) {
+      offlineBuffer.push_back(payload);
+      Serial.println("Offline. Reading buffered.");
+    } else {
+      Serial.println("Offline. Buffer full, dropping reading.");
+    }
+  }
 }
 
 void setup() {
@@ -168,14 +206,27 @@ void setup() {
 void loop() {
   if (!mqttClient.connected()) {
     reconnectMQTT();
+  } else {
+    // Flush offline buffer if any
+    while (offlineBuffer.size() > 0 && mqttClient.connected()) {
+      String payload = offlineBuffer.front();
+      if (mqttClient.publish(readingTopic.c_str(), payload.c_str())) {
+        offlineBuffer.erase(offlineBuffer.begin());
+        Serial.println("Buffered reading published.");
+        delay(50); // Small delay to avoid flooding
+      } else {
+        break; // Stop flushing if publish fails
+      }
+    }
   }
+  
   mqttClient.loop();
 
   unsigned long now = millis();
 
   if (now - lastReadingTime > readingInterval) {
     lastReadingTime = now;
-    publishReading();
+    processAndPublishReading();
   }
 
   if (now - lastHeartbeatTime > heartbeatInterval) {
