@@ -10,16 +10,16 @@ const router = Router();
 
 // ── Auth-specific rate limiting ──────────────────
 const authLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10,
+  windowMs: 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 10 : 100,
   message: { error: 'Too many authentication attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5,
+  windowMs: 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 50,
   message: { error: 'Too many login attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,

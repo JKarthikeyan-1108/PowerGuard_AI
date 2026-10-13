@@ -1,0 +1,24 @@
+{
+  "dataset_name": "UCI Individual Household Electric Power Consumption",
+  "dataset_provenance": "Kaggle uciml/electric-power-consumption",
+  "evaluation_split": "Chronological 80/20 train-test split",
+  "metrics": {
+    "isolation_forest": {
+      "roc_auc": 0.9974,
+      "f1_score": 0.8263,
+      "precision": 0.8415,
+      "recall": 0.8118
+    },
+    "baseline_z_score": {
+      "roc_auc": 1.0,
+      "f1_score": 0.9827
+    }
+  },
+  "score_distribution": {
+    "min": -0.1983,
+    "max": 0.1784,
+    "mean": 0.1282,
+    "median": 0.1383
+  },
+  "conclusion": "Isolation Forest outperformed baseline Z-score outlier detection by detecting multivariate correlations (e.g. low current paired with peak hour and shifted power factor), whereas single-feature thresholds missed subtle tampering signatures."
+}

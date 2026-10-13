@@ -139,10 +139,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
       </div>
 
-      {/* Right — Content area */}
-      <div className="flex w-full lg:w-[50%] xl:w-[52%] items-center justify-center p-6 sm:p-10 lg:p-12 bg-white min-h-screen lg:min-h-0">
+      {/* Right — Content area (always light mode) */}
+      <div className="auth-light flex w-full lg:w-[50%] xl:w-[52%] items-center justify-center p-6 sm:p-10 lg:p-12 bg-white min-h-screen lg:min-h-0">
         <div className="w-full max-w-[440px]">{children}</div>
       </div>
     </div>
   );
 }
+

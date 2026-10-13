@@ -10,6 +10,7 @@ import { ChartCard, AreaChartComponent, BarChartComponent, LineChartComponent } 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DataSourceBadge } from '@/components/shared/DataSourceBadge';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import {
@@ -218,6 +219,7 @@ export default function ConsumerDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <DataSourceBadge isSimulated={false} dataSource="ESP32_PZEM004T" />
           <div className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border',
             isConnected

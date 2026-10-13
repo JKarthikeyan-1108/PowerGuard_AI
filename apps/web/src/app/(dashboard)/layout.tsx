@@ -8,9 +8,27 @@ import { SocketProvider } from '@/providers/SocketProvider';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Show a minimal loading skeleton while auth state is being hydrated.
+  // The Next.js middleware handles the redirect for unauthenticated users —
+  // this guard prevents a brief flash of the layout without user data.
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0F4C81] to-[#2F75B5] flex items-center justify-center animate-pulse">
+            <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <p className="text-sm text-muted-foreground animate-pulse">Loading PowerGuard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -51,3 +69,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+

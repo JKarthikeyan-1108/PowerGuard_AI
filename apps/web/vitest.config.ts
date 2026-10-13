@@ -14,8 +14,10 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'vitest.setup.ts',
+        'e2e/**',
       ],
     },
+    exclude: ['node_modules/**', 'e2e/**'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },

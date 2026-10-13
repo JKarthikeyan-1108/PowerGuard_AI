@@ -39,6 +39,8 @@ npm-debug.log*
 apps/ai/trained_models/*.pkl
 apps/ai/trained_models/*.h5
 apps/ai/trained_models/*.joblib
+!apps/ai/trained_models/isolation_forest_v1.0.joblib
+!apps/ai/trained_models/scaler_v1.0.joblib
 
 # Docker
 docker-data/

@@ -88,6 +88,23 @@
     --chart-5: 340 75% 60%;
   }
 
+  /* ── Auth panel — always light mode regardless of system/app theme ─────── */
+  /* Applied to the right panel of the auth layout to prevent dark-mode       */
+  /* variable leakage from .dark class on <html>                              */
+  .auth-light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    color-scheme: light;
+  }
+
   * {
     @apply border-border;
   }
@@ -98,6 +115,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
 }
 
 /* ═══════════════════════════════════════════════════════

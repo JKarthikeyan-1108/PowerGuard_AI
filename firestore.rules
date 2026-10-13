@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper Functions ──────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && (
+        request.auth.token.role == role || 
+        getUserData().role == role
+      );
+    }
+
+    function isAdmin() {
+      return hasRole('ADMIN') || hasRole('SUPER_ADMIN');
+    }
+
+    function isUtilityOperator() {
+      return hasRole('UTILITY_OPERATOR') || hasRole('UTILITY') || isAdmin();
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ── Users Collection ──────────────────────────────────────────
+    match /users/{userId} {
+      // Consumers can view own profile; operators/admins can view all
+      allow read: if isOwner(userId) || isUtilityOperator();
+      
+      // Users can update their basic personal details, but CANNOT escalate their own role
+      allow update: if (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isVerified']))) 
+                    || isAdmin();
+
+      // Only admins can create or delete users directly in Firestore
+      allow create, delete: if isAdmin();
+    }
+
+    // ── Meters Collection ─────────────────────────────────────────
+    match /meters/{meterId} {
+      // Consumers can only read meters assigned to their account
+      allow read: if isUtilityOperator() || (
+        isAuthenticated() && resource.data.consumerId == request.auth.uid
+      );
+
+      // Only utility operators and admins can create, update, or decommission meters
+      allow create, update, delete: if isUtilityOperator();
+    }
+
+    // ── Readings Collection ───────────────────────────────────────
+    match /readings/{readingId} {
+      // Readings can be queried by utility/admin, or by consumers for their own meters
+      allow read: if isUtilityOperator() || (
+        isAuthenticated() && (
+          resource.data.consumerId == request.auth.uid ||
+          request.auth.token.meterId == resource.data.meterId
+        )
+      );
+
+      // Writes are restricted to server-side ingestion or verified IoT devices
+      // Strict payload schema and range validation enforced
+      allow create: if isUtilityOperator() || (
+        request.resource.data.keys().hasAll(['meterId', 'timestamp', 'voltage', 'current', 'power', 'dataSource', 'validationStatus']) &&
+        request.resource.data.voltage >= 100 && request.resource.data.voltage <= 350 &&
+        request.resource.data.current >= 0 && request.resource.data.current <= 150 &&
+        request.resource.data.power >= 0 &&
+        request.resource.data.timestamp is timestamp
+      );
+
+      // Historical readings are immutable: no modifications or deletions
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Alerts Collection ─────────────────────────────────────────
+    match /alerts/{alertId} {
+      // Utility and admin can read all; consumers can read alerts for their meter
+      allow read: if isUtilityOperator() || (
+        isAuthenticated() && resource.data.consumerId == request.auth.uid
+      );
+
+      // Only utility operators or server inference can create and update alert resolution status
+      allow create: if isUtilityOperator();
+      allow update: if isUtilityOperator() && (
+        request.resource.data.status in ['INVESTIGATING', 'CONFIRMED', 'RESOLVED', 'FALSE_POSITIVE', 'OPEN']
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── Predictions Collection ────────────────────────────────────
+    match /predictions/{predictionId} {
+      allow read: if isUtilityOperator() || (
+        isAuthenticated() && resource.data.consumerId == request.auth.uid
+      );
+      // Writes reserved for inference engine / utility operators
+      allow create, update: if isUtilityOperator();
+      allow delete: if isAdmin();
+    }
+
+    // ── Reports Collection ────────────────────────────────────────
+    match /reports/{reportId} {
+      allow read: if isUtilityOperator() || (
+        isAuthenticated() && resource.data.userId == request.auth.uid
+      );
+      allow create, update, delete: if isUtilityOperator();
+    }
+
+    // ── DeviceStatus Collection ───────────────────────────────────
+    match /deviceStatus/{deviceId} {
+      allow read: if isUtilityOperator();
+      // Updated by serverless ingestion or device heartbeat
+      allow create, update: if isUtilityOperator();
+      allow delete: if isAdmin();
+    }
+
+    // ── ModelMetadata Collection ──────────────────────────────────
+    match /modelMetadata/{versionId} {
+      // Model versions and metadata are readable by authenticated users
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

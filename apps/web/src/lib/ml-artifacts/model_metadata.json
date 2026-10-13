@@ -1,0 +1,77 @@
+{
+  "model_name": "PowerGuard_IsolationForest_AnomalyDetector",
+  "model_version": "v1.0",
+  "algorithm": "Isolation Forest (Unsupervised)",
+  "features": [
+    "voltage",
+    "current",
+    "power",
+    "power_factor",
+    "frequency",
+    "apparent_power",
+    "hour_sin",
+    "hour_cos"
+  ],
+  "feature_count": 8,
+  "scaler": {
+    "type": "StandardScaler",
+    "means": [
+      228.62916451251485,
+      7.403036363923561,
+      1522.428237981122,
+      0.9094028577705145,
+      50.00018047877724,
+      1.666311036637109,
+      -9.769962616701377e-18,
+      -4.7073456244106636e-17
+    ],
+    "scales": [
+      3.980651172104912,
+      8.09811979770347,
+      1523.0397836300335,
+      0.082817915449272,
+      0.03990475398637903,
+      1.650131738535523,
+      0.7071067811865476,
+      0.7071067811865476
+    ]
+  },
+  "threshold": 0.011934514003805529,
+  "contamination": 0.03,
+  "n_estimators": 150,
+  "training_samples": 12000,
+  "test_samples": 3000,
+  "trained_at": "2026-10-13T12:52:27.253788Z",
+  "validation_bounds": {
+    "voltage": {
+      "min": 150.0,
+      "max": 300.0,
+      "unit": "V"
+    },
+    "current": {
+      "min": 0.0,
+      "max": 120.0,
+      "unit": "A"
+    },
+    "power": {
+      "min": 0.0,
+      "max": 35000.0,
+      "unit": "W"
+    },
+    "power_factor": {
+      "min": 0.0,
+      "max": 1.0,
+      "unit": "dimensionless"
+    },
+    "frequency": {
+      "min": 45.0,
+      "max": 65.0,
+      "unit": "Hz"
+    }
+  },
+  "risk_levels": {
+    "NORMAL": "Score > 0.02 (Standard consumer consumption envelope)",
+    "SUSPICIOUS": "0.02 >= Score >= -0.05 (Borderline deviation, monitor trend)",
+    "HIGH_RISK": "Score < -0.05 (Severe electrical anomaly / possible bypass / fault)"
+  }
+}

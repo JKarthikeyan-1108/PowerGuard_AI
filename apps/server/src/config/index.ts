@@ -1,5 +1,12 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '../../.env' });
+import path from 'path';
+
+// Load repo-root .env first (shared config), then app-local .env overrides it.
+// dotenv.config does NOT override already-set env vars, so the last call wins
+// for any vars not already in the environment.
+// We use { override: true } on the local .env so it takes precedence.
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });                    // repo root fallback
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });         // apps/server/.env (highest priority)
 
 const isProduction = (process.env.NODE_ENV || 'development') === 'production';
 
