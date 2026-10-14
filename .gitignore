@@ -52,3 +52,7 @@ htmlcov/
 
 # Prisma
 apps/server/prisma/migrations/*/migration_lock.toml
+
+# Agent Skills
+.agents/
+skills-lock.json

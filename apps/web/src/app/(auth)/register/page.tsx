@@ -159,7 +159,7 @@ export default function RegisterPage() {
       toast.success('Account created! Welcome to PowerGuard.');
       router.push('/consumer');
     } catch (error: any) {
-      const msg = error?.response?.data?.error || 'Registration failed. Please try again.';
+      const msg = error?.message || error?.response?.data?.error || 'Registration failed. Please try again.';
       toast.error(msg);
       if (msg.toLowerCase().includes('email')) {
         form.setError('email', { message: msg });
