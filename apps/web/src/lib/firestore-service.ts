@@ -148,7 +148,7 @@ export async function getReadingsFromFirestore(
 
       const snapshot = await query.get();
       if (!snapshot.empty) {
-        return snapshot.docs.map(doc => doc.data() as FirestoreReading);
+        return snapshot.docs.map((doc: any) => doc.data() as FirestoreReading);
       }
     } catch (err) {
       console.warn('[Firestore] Query error, using memory store:', err);
@@ -211,7 +211,7 @@ export async function getAlertsFromFirestore(meterId?: string): Promise<Firestor
       }
       const snapshot = await query.get();
       if (!snapshot.empty) {
-        return snapshot.docs.map(doc => doc.data() as FirestoreAlert);
+        return snapshot.docs.map((doc: any) => doc.data() as FirestoreAlert);
       }
     } catch (err) {
       console.warn('[Firestore] Alert query error:', err);
@@ -235,7 +235,7 @@ export async function getMetersFromFirestore(consumerId?: string): Promise<Fires
       }
       const snapshot = await query.get();
       if (!snapshot.empty) {
-        return snapshot.docs.map(doc => doc.data() as FirestoreMeter);
+        return snapshot.docs.map((doc: any) => doc.data() as FirestoreMeter);
       }
     } catch (err) {
       console.warn('[Firestore] Meters query error:', err);
