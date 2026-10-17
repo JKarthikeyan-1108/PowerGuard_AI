@@ -22,6 +22,7 @@ export const errorHandler = (err: Error | AppError, req: Request, res: Response,
     });
 
     res.status(err.statusCode).json({
+      success: false,
       error: err.message,
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     });
@@ -36,6 +37,7 @@ export const errorHandler = (err: Error | AppError, req: Request, res: Response,
   });
 
   res.status(500).json({
+    success: false,
     error: 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { 
       message: err.message,
@@ -46,6 +48,7 @@ export const errorHandler = (err: Error | AppError, req: Request, res: Response,
 
 export const notFoundHandler = (req: Request, res: Response): void => {
   res.status(404).json({
+    success: false,
     error: 'Not found',
     path: req.originalUrl,
   });

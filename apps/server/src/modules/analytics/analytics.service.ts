@@ -2,9 +2,7 @@ import { analyticsRepository } from './analytics.repository';
 import { AnalyticsDashboardResponse, TheftHeatmapData } from './analytics.types';
 
 import { aiService } from '../../services/ai.service';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/database';
 
 export class AnalyticsService {
   async getDashboardOverview(user: any): Promise<AnalyticsDashboardResponse | any> {

@@ -1,9 +1,8 @@
-import { PrismaClient, ReadingSource, MeterStatus } from '@prisma/client';
+import { ReadingSource, MeterStatus, AlertType, AlertSeverity, AlertStatus } from '@prisma/client';
+import prisma from '../../config/database';
 import logger from '../../config/logger';
 import { getIO } from '../../socket';
 import { aiService } from '../ai.service';
-
-const prisma = new PrismaClient();
 
 export interface ReadingPayload {
   serialNumber: string;
@@ -96,15 +95,43 @@ export class ReadingProcessor {
             data: { isAnomaly: true }
           });
           
+          const alertSeverity = aiResult.risk_level === 'High Risk' ? AlertSeverity.CRITICAL : AlertSeverity.HIGH;
+          const alertTitle = aiResult.risk_level === 'High Risk' ? 'Critical Consumption Anomaly' : 'Suspicious Load Pattern';
+          const alertDesc = `Meter ${payload.serialNumber} shows ${aiResult.risk_level} risk. ${aiResult.explanation || ''} Confidence: ${((aiResult.confidence || 0.9) * 100).toFixed(1)}%`;
+
+          const savedAlert = await prisma.alert.create({
+            data: {
+              meterId: meter.id,
+              type: AlertType.THEFT_DETECTED,
+              severity: alertSeverity,
+              status: AlertStatus.NEW,
+              title: alertTitle,
+              description: alertDesc,
+            }
+          });
+
           // Emit alert
           getIO().of('/alerts').emit('alert:new', {
-            title: 'AI Detected Theft Risk',
-            description: `Meter ${payload.serialNumber} shows ${aiResult.risk_level} risk. Explanation: ${aiResult.explanation}. Confidence: ${(aiResult.confidence * 100).toFixed(1)}%`,
-            severity: aiResult.risk_level === 'High Risk' ? 'CRITICAL' : 'HIGH',
+            id: savedAlert.id,
+            title: alertTitle,
+            description: alertDesc,
+            severity: alertSeverity,
+            status: savedAlert.status,
             meterId: meter.id,
             serialNumber: payload.serialNumber,
             consumerId: meter.consumerId,
+            createdAt: savedAlert.createdAt,
           });
+
+          if (meter.consumerId) {
+            getIO().of('/consumer').to(`consumer:${meter.consumerId}`).emit('alert:new', {
+              id: savedAlert.id,
+              title: alertTitle,
+              description: alertDesc,
+              severity: alertSeverity,
+              createdAt: savedAlert.createdAt,
+            });
+          }
         }
       }
 

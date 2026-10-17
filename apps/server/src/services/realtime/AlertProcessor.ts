@@ -1,8 +1,7 @@
-import { PrismaClient, AlertType, AlertSeverity, AlertStatus } from '@prisma/client';
+import { AlertType, AlertSeverity, AlertStatus } from '@prisma/client';
+import prisma from '../../config/database';
 import logger from '../../config/logger';
 import { getIO } from '../../socket';
-
-const prisma = new PrismaClient();
 
 export interface AlertPayload {
   serialNumber: string;

@@ -23,9 +23,24 @@ class ConsumerClusteringModel:
 
     def _load_models(self):
         paths = self._get_paths()
-        if os.path.exists(paths['model']):
-            self.model = joblib.load(paths['model'])
-            self.scaler = joblib.load(paths['scaler'])
+        if os.path.exists(paths['model']) and os.path.exists(paths['scaler']):
+            try:
+                self.model = joblib.load(paths['model'])
+                self.scaler = joblib.load(paths['scaler'])
+                return
+            except Exception as e:
+                print(f"[ConsumerClusteringModel] Could not load saved model: {e}")
+        self._train_default()
+
+    def _train_default(self):
+        np.random.seed(42)
+        n = 1000
+        df = pd.DataFrame({
+            'avg_daily_usage': np.random.normal(15, 6, n).clip(2, 60),
+            'peak_ratio': np.random.uniform(0.1, 0.6, n),
+            'night_ratio': np.random.uniform(0.05, 0.4, n)
+        })
+        self.train(df)
 
     def train(self, df: pd.DataFrame):
         features = ['avg_daily_usage', 'peak_ratio', 'night_ratio']

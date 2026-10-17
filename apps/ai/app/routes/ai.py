@@ -46,6 +46,27 @@ async def predict_theft(req: TheftRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/predict")
+async def predict_anomaly(req: TheftRequest):
+    try:
+        result = theft_suite.predict(req.model_dump())
+        risk_level = result.get('risk_level', 'Normal')
+        is_anomaly = risk_level in ['Suspicious', 'High Risk', 'CRITICAL']
+        prediction_history.append({"time": time.time(), "type": "predict", "meter": req.meter_id, "result": result})
+        return {
+            "status": "success",
+            "meter_id": req.meter_id,
+            "anomaly_score": result['risk_score'],
+            "is_anomaly": is_anomaly,
+            "risk_level": risk_level,
+            "confidence": result['confidence'],
+            "probability": result['probability'],
+            "explanation": result['explanation'],
+            "feature_importance": result['feature_importance']
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/bill", response_model=BillResponse)
 async def predict_bill(req: BillRequest):
     try:

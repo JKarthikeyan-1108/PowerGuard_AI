@@ -19,4 +19,7 @@ router.get('/:id/readings', validate(getReadingsSchema, 'query'), metersControll
 // PUT /api/meters/:id/status — Admin or Utility Officer update status
 router.put('/:id/status', authorize('ADMIN', 'UTILITY_OFFICER'), validate(updateMeterStatusSchema), metersController.updateMeterStatus);
 
+// POST /api/meters/reading — Ingest real-time meter reading (MQTT / REST IoT ingestion)
+router.post('/reading', metersController.ingestReading);
+
 export default router;

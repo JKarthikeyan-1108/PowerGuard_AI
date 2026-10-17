@@ -29,6 +29,9 @@ import billingRoutes from './modules/billing/billing.routes';
 import saasRoutes from './modules/saas/saas.routes';
 import copilotRoutes from './modules/copilot/copilot.routes';
 import integrationRoutes from './modules/integration/integration.routes';
+import incidentsRoutes from './modules/incidents/incidents.routes';
+import devicesRoutes from './modules/devices/devices.routes';
+import demoRoutes from './modules/demo/demo.routes';
 
 const app = express();
 
@@ -98,6 +101,9 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/saas', saasRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/integration', integrationRoutes);
+app.use('/api/incidents', incidentsRoutes);
+app.use('/api/devices', devicesRoutes);
+app.use('/api/demo', demoRoutes);
 
 // ── Error Handling ───────────────────────────────
 app.use(notFoundHandler);

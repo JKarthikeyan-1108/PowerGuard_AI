@@ -46,6 +46,16 @@ We use **Playwright** for complete end-to-end browser testing.
   npx playwright show-report
   ```
 
+### 4. AI Analytics Service Testing
+We use **Pytest** and **FastAPI TestClient** for testing anomaly detection, predictions, forecasting, and recommendations.
+
+- **Directory**: `apps/ai/tests/`
+- **Run Tests**:
+  ```bash
+  cd apps/ai
+  pytest
+  ```
+
 ## Generating Coverage Reports
 Running `npm run test:coverage` in both `apps/server` and `apps/web` will generate a `/coverage` folder containing an `index.html` report.
 

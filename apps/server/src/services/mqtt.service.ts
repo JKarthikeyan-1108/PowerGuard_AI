@@ -28,9 +28,12 @@ export const initMQTTSubscriber = (brokerUrl: string) => {
     // Subscribe to all relevant topics
     const topics = [
       'meters/+/reading',
+      'meters/+/readings',
       'meters/+/status',
       'meters/+/heartbeat',
       'meters/+/alert',
+      'powerguard/meters/+/reading',
+      'powerguard/meters/+/readings',
       'transformers/+/status'
     ];
 
@@ -70,10 +73,15 @@ export const initMQTTSubscriber = (brokerUrl: string) => {
   mqttClient.on('message', async (topic, message) => {
     metricsCollector.recordMqttMessage();
     try {
-      const parts = topic.split('/');
+      let cleanTopic = topic;
+      if (cleanTopic.startsWith('powerguard/')) {
+        cleanTopic = cleanTopic.replace(/^powerguard\//, '');
+      }
+      const parts = cleanTopic.split('/');
       const deviceType = parts[0]; // meters or transformers
       const serialNumber = parts[1];
-      const eventType = parts[2]; // reading, status, heartbeat, alert
+      let eventType = parts[2]; // reading, status, heartbeat, alert
+      if (eventType === 'readings') eventType = 'reading';
 
       const payloadString = message.toString();
       let rawPayload;

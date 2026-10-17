@@ -8,7 +8,7 @@ on:
 
 jobs:
   frontend:
-    name: Frontend Checks
+    name: Frontend (Next.js & Vitest)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -22,10 +22,11 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
       - run: npm run type-check
+      - run: npm test
       - run: npm run build
 
   backend:
-    name: Backend Checks
+    name: Backend (Express & TypeScript)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -42,7 +43,7 @@ jobs:
       - run: npm run type-check
 
   ai:
-    name: AI Service Checks
+    name: AI Service (FastAPI & Pytest)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -53,7 +54,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt
-      - run: python -c "from app.main import app; print('✅ FastAPI app imports OK')"
+      - run: pytest
 
   docker:
     name: Docker Build

@@ -41,6 +41,47 @@ class TheftModelSuite:
             except Exception as e:
                 print(f"[TheftModelSuite] Could not load metadata: {e}")
 
+    def train(self, df: pd.DataFrame):
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.ensemble import IsolationForest
+
+        df_copy = df.copy()
+        if 'apparent_power' not in df_copy.columns:
+            df_copy['apparent_power'] = (df_copy['voltage'] * df_copy['current']) / 1000.0
+        if 'hour_sin' not in df_copy.columns:
+            df_copy['hour_sin'] = 0.0
+            df_copy['hour_cos'] = 1.0
+
+        feature_cols = ['voltage', 'current', 'power', 'power_factor', 'frequency', 'apparent_power', 'hour_sin', 'hour_cos']
+        X = df_copy[feature_cols].values
+
+        self.scaler = StandardScaler()
+        X_scaled = self.scaler.fit_transform(X)
+
+        self.if_model = IsolationForest(n_estimators=100, contamination=0.03, random_state=42)
+        self.if_model.fit(X_scaled)
+
+        scores = self.if_model.decision_function(X_scaled)
+        threshold = float(np.percentile(scores, 3.0))
+
+        if_path = os.path.join(MODEL_DIR, f'isolation_forest_{self.version}.joblib')
+        scaler_path = os.path.join(MODEL_DIR, f'scaler_{self.version}.joblib')
+        meta_path = os.path.join(MODEL_DIR, 'model_metadata.json')
+
+        joblib.dump(self.if_model, if_path)
+        joblib.dump(self.scaler, scaler_path)
+
+        self.metadata = {
+            "model_version": self.version,
+            "threshold": threshold,
+            "scaler": {
+                "means": [float(m) for m in self.scaler.mean_],
+                "scales": [float(s) for s in self.scaler.scale_]
+            }
+        }
+        with open(meta_path, 'w') as f:
+            json.dump(self.metadata, f, indent=2)
+
     def predict(self, data: dict):
         voltage = float(data.get('voltage', 230.0))
         current = float(data.get('current', 10.0))

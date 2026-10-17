@@ -1,9 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../middleware/authenticate';
 import { analyticsService } from './analytics.service';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/database';
 
 export class AnalyticsController {
   async getDashboardOverview(req: AuthRequest, res: Response, next: NextFunction) {

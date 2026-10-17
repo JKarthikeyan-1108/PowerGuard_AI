@@ -1,7 +1,8 @@
 import axios from 'axios';
+import config from '../config';
 import logger from '../config/logger';
 
-const AI_URL = process.env.AI_ENGINE_URL || 'http://localhost:8000/api/ai';
+const AI_URL = process.env.AI_ENGINE_URL || `${config.ai.serviceUrl}/api/ai`;
 
 export class AIService {
   async predictTheft(meterId: string, voltage: number, current: number, powerFactor: number, frequency: number, value: number) {

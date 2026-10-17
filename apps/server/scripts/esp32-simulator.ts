@@ -44,7 +44,7 @@ client.on('error', (err) => {
 });
 
 function startSimulatingMeter(serialNumber: string) {
-  const topic = `powerguard/meters/${serialNumber}/readings`;
+  const topic = `meters/${serialNumber}/reading`;
   
   // Base load for this meter
   const baseLoad = randomFloat(0.5, 3.0);

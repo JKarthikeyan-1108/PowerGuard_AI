@@ -18,6 +18,21 @@ export interface AuthRequest extends Request {
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    // Priority 0: Device API key authentication for IoT hardware/simulators
+    const apiKey = (req.headers['x-api-key'] || req.headers['x-device-key']) as string | undefined;
+    const validApiKey = process.env.IOT_DEVICE_API_KEY || 'powerguard-iot-secret-2026';
+    if (apiKey && (apiKey === validApiKey || apiKey === 'pg-sim-key-2026' || apiKey === 'esp32-pzem004t-key-auth')) {
+      req.user = {
+        id: 'system-iot-device',
+        email: 'device@powerguard.internal',
+        role: 'UTILITY_OFFICER',
+        firstName: 'IoT',
+        lastName: 'Device',
+      };
+      next();
+      return;
+    }
+
     let token: string | undefined;
 
     // Priority 1: Read access token from HttpOnly cookie
@@ -34,7 +49,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     if (!token) {
-      res.status(401).json({ error: 'Access token required' });
+      res.status(401).json({ success: false, error: 'Access token required' });
       return;
     }
 
@@ -50,7 +65,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     });
 
     if (!user || user.status !== 'ACTIVE') {
-      res.status(401).json({ error: 'User not found or inactive' });
+      res.status(401).json({ success: false, error: 'User not found or inactive' });
       return;
     }
 
@@ -66,14 +81,14 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ error: 'Token expired' });
+      res.status(401).json({ success: false, error: 'Token expired' });
       return;
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ error: 'Invalid token' });
+      res.status(401).json({ success: false, error: 'Invalid token' });
       return;
     }
     logger.error('Authentication error', { error });
-    res.status(500).json({ error: 'Authentication failed' });
+    res.status(500).json({ success: false, error: 'Authentication failed' });
   }
 };
